@@ -5,20 +5,45 @@
 ## Структура проекта
 
 ```
-bullmc-client/
-├── build.gradle.kts           # Конфигурация зависимостей
-├── settings.gradle.kts        # Настройки проекта
-├── src/
-│   └── main/
-│       ├── kotlin/
-│       │   └── net/bullmc/client/
-│       │       ├── Main.kt          # Точка входа
-│       │       ├── Theme.kt         # Темы оформления
-│       │       ├── ui/              # UI компоненты
-│       │       ├── core/            # Бизнес-логика
-│       │       └── api/             # API клиент
-│       └── resources/
-└── README.md
+src/main/kotlin/net/bullmc/client/
+├── Main.kt                          # Точка входа
+├── theme/
+│   └── Theme.kt                     # Темы оформления (7 штук)
+├── ui/
+│   ├── component/                   # Переиспользуемые компоненты
+│   │   ├── Sidebar.kt
+│   │   ├── TopBanner.kt
+│   │   ├── FriendsPanel.kt
+│   │   └── BottomCards.kt
+│   └── screen/                      # Экраны
+│       ├── LoaderScreen.kt
+│       ├── SettingsScreen.kt
+│       ├── LogScreen.kt
+│       └── ModSettingsScreen.kt
+├── core/
+│   ├── launcher/                    # Запуск и скачивание Minecraft
+│   │   ├── Launcher.kt
+│   │   ├── MinecraftDownloader.kt
+│   │   └── MinecraftLauncher.kt
+│   ├── loader/                      # Mod-лоадеры (Fabric, Forge, NeoForge, Quilt)
+│   │   ├── LoaderManager.kt
+│   │   └── LoaderTypes.kt
+│   ├── mod/                         # Моды (Modrinth API)
+│   │   ├── ModrinthApi.kt
+│   │   ├── ModDownloader.kt
+│   │   └── ModSettings.kt
+│   ├── auth/
+│   │   └── Auth.kt
+│   ├── profile/
+│   │   └── Profile.kt               # Система профилей
+│   └── util/
+│       ├── LauncherPaths.kt
+│       ├── CacheManager.kt
+│       └── JreDetector.kt
+├── api/
+│   └── ServerApi.kt
+└── db/
+    └── DatabaseManager.kt
 ```
 
 ## Установка и запуск
