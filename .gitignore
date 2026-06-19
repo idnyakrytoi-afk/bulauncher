@@ -2,6 +2,7 @@
 .gradle/
 build/
 *.jar
+gradle/wrapper/*.zip
 
 # Kotlin
 *.class
