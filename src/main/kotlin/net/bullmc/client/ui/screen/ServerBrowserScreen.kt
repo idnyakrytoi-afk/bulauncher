@@ -39,8 +39,8 @@ fun ServerBrowserScreen(
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp)
     ) {
-        Text("Серверы", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
-        Text("Добавьте серверы и проверьте статус", fontSize = 12.sp, color = Color(0xFF484F58), modifier = Modifier.padding(top = 2.dp))
+        Text("Серверы", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
+        Text("Добавьте серверы и проверьте статус", fontSize = 14.sp, color = Color(0xFF6E7681), modifier = Modifier.padding(top = 2.dp))
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
@@ -51,13 +51,13 @@ fun ServerBrowserScreen(
             androidx.compose.material.TextField(
                 value = newServerIp,
                 onValueChange = { newServerIp = it },
-                placeholder = { Text("IP:Порт (например 1.2.3.4:25565)", color = Color(0xFF484F58), fontSize = 12.sp) },
+                placeholder = { Text("IP:Порт (например 1.2.3.4:25565)", color = Color(0xFF8B949E), fontSize = 14.sp) },
                 singleLine = true,
-                textStyle = androidx.compose.ui.text.TextStyle(color = Color(0xFFC9D1D9), fontSize = 12.sp),
-                modifier = Modifier.weight(1f).height(40.dp),
+                textStyle = androidx.compose.ui.text.TextStyle(color = Color(0xFFE6EDF3), fontSize = 14.sp),
+                modifier = Modifier.weight(1f).height(44.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = androidx.compose.material.TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color(0xFF0D1117),
+                    backgroundColor = Color(0xFF1C2128),
                     cursorColor = primaryColor,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
@@ -65,7 +65,7 @@ fun ServerBrowserScreen(
             )
             Box(
                 modifier = Modifier
-                    .height(40.dp)
+                    .height(44.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(primaryColor)
                     .clickable {
@@ -74,10 +74,10 @@ fun ServerBrowserScreen(
                             newServerIp = ""
                         }
                     }
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 18.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("+ Добавить", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("+ Добавить", fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -104,17 +104,17 @@ fun ServerBrowserScreen(
                         pinging = false
                     }
                 }
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 18.dp, vertical = 10.dp),
             contentAlignment = Alignment.Center
         ) {
             if (pinging) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(modifier = Modifier.size(14.dp), color = primaryColor, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = primaryColor, strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Пинг...", fontSize = 12.sp, color = primaryColor)
+                    Text("Пинг...", fontSize = 14.sp, color = primaryColor)
                 }
             } else {
-                Text("\u21BB Проверить все серверы", fontSize = 12.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
+                Text("\u21BB Проверить все серверы", fontSize = 14.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -135,15 +135,15 @@ fun ServerBrowserScreen(
                         .fillMaxWidth()
                         .clip(cardShape)
                         .background(Color(0xFF161B22))
-                        .padding(14.dp),
+                        .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(10.dp)
-                                .clip(RoundedCornerShape(5.dp))
+                                .size(12.dp)
+                                .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     when {
                                         info?.online == true -> Color(0xFF34D399)
@@ -152,13 +152,13 @@ fun ServerBrowserScreen(
                                     }
                                 )
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 info?.motd?.take(50) ?: host,
-                                fontSize = 13.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFC9D1D9)
+                                color = Color(0xFFE6EDF3)
                             )
                             Text(
                                 buildString {
@@ -170,30 +170,30 @@ fun ServerBrowserScreen(
                                     }
                                     if (info?.version?.isNotEmpty() == true) append(" \u2022 ${info.version}")
                                 },
-                                fontSize = 10.sp,
-                                color = Color(0xFF6E7681)
+                                fontSize = 13.sp,
+                                color = Color(0xFF8B949E)
                             )
                         }
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .background(primaryColor.copy(alpha = 0.15f))
                                 .clickable { onJoinServer(server) }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
                         ) {
-                            Text("\u25B6 Играть", fontSize = 10.sp, color = primaryColor, fontWeight = FontWeight.Bold)
+                            Text("\u25B6 Играть", fontSize = 13.sp, color = primaryColor, fontWeight = FontWeight.Bold)
                         }
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .background(Color(0xFFF87171).copy(alpha = 0.1f))
                                 .clickable { onRemoveServer(server) }
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
                         ) {
-                            Text("\u2715", fontSize = 10.sp, color = Color(0xFFF87171))
+                            Text("\u2715", fontSize = 13.sp, color = Color(0xFFF87171))
                         }
                     }
                 }

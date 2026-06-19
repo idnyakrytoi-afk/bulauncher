@@ -164,6 +164,8 @@ fun main() = application {
         selectedLoaderVersion = activeProfile.loaderVersion
         enabledMods = activeProfile.enabledMods
         ramMb = activeProfile.ramMb
+        gameDir = activeProfile.getGameDir().absolutePath
+        modsDir = activeProfile.getModsDir().absolutePath
     }
 
     LaunchedEffect(Unit) {
@@ -181,8 +183,8 @@ fun main() = application {
                 availableVersions = versions.map { it.id }
                 selectedVersion = versions.first().id
             }
-            gameDir = launcher.getGameDir().absolutePath
-            modsDir = launcher.getModsDir().absolutePath
+            gameDir = activeProfile.getGameDir().absolutePath
+            modsDir = activeProfile.getModsDir().absolutePath
 
             serverIps.forEach { ip ->
                 val status = ServerApi.getServerStatus(ip)
@@ -388,6 +390,7 @@ fun main() = application {
                                                 loader = selectedLoader,
                                                 loaderVersion = selectedLoaderVersion,
                                                 enabledModIds = enabledMods,
+                                                gameDir = activeProfile.getGameDir(),
                                                 onStatus = { msg, prog ->
                                                     statusMessage = msg
                                                     progress = prog
@@ -436,7 +439,8 @@ fun main() = application {
                                     ProfileManager.updateProfile(activeProfile.id) { enabledMods = mods }
                                 },
                                 primaryColor = ThemeManager.getPrimaryColor(currentTheme),
-                                selectedMcVersion = selectedVersion
+                                selectedMcVersion = selectedVersion,
+                                modsDir = activeProfile.getModsDir()
                             )
                         }
 
@@ -481,6 +485,8 @@ fun main() = application {
                                     selectedLoaderVersion = activeProfile.loaderVersion
                                     enabledMods = activeProfile.enabledMods
                                     ramMb = activeProfile.ramMb
+                                    gameDir = activeProfile.getGameDir().absolutePath
+                                    modsDir = activeProfile.getModsDir().absolutePath
                                 },
                                 onProfileCreate = { name ->
                                     val newProfile = GameProfile(name = name)
@@ -492,6 +498,8 @@ fun main() = application {
                                     selectedLoader = newProfile.loaderType
                                     selectedLoaderVersion = newProfile.loaderVersion
                                     enabledMods = newProfile.enabledMods
+                                    gameDir = newProfile.getGameDir().absolutePath
+                                    modsDir = newProfile.getModsDir().absolutePath
                                 },
                                 onProfileDelete = { id ->
                                     ProfileManager.deleteProfile(id)
@@ -501,6 +509,8 @@ fun main() = application {
                                     selectedLoader = activeProfile.loaderType
                                     selectedLoaderVersion = activeProfile.loaderVersion
                                     enabledMods = activeProfile.enabledMods
+                                    gameDir = activeProfile.getGameDir().absolutePath
+                                    modsDir = activeProfile.getModsDir().absolutePath
                                 },
                                 onProfileRename = { id, newName ->
                                     ProfileManager.updateProfile(id) { name = newName }

@@ -28,7 +28,7 @@ fun FriendsPanel(primaryColor: Color) {
             .padding(start = 8.dp)
             .shadow(4.dp, panelShape)
             .background(Color(0xFF161B22), panelShape)
-            .padding(14.dp)
+            .padding(16.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -38,25 +38,25 @@ fun FriendsPanel(primaryColor: Color) {
             ) {
                 Text(
                     text = "\u0414\u0440\u0443\u0437\u044C\u044F",
-                    fontSize = 15.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFC9D1D9)
+                    color = Color(0xFFE6EDF3)
                 )
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(28.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(primaryColor.copy(alpha = 0.15f))
                         .clickable {},
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("+", fontSize = 12.sp, color = primaryColor, fontWeight = FontWeight.Bold)
+                    Text("+", fontSize = 14.sp, color = primaryColor, fontWeight = FontWeight.Bold)
                 }
             }
 
             Text(
                 text = "\u25CF  3 \u0432 \u0441\u0435\u0442\u0438",
-                fontSize = 11.sp,
+                fontSize = 13.sp,
                 color = Color(0xFF34D399),
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
             )
@@ -66,7 +66,7 @@ fun FriendsPanel(primaryColor: Color) {
                     .weight(1f)
                     .fillMaxWidth()
                     .background(Color(0xFF0D1117), RoundedCornerShape(10.dp))
-                    .padding(6.dp)
+                    .padding(8.dp)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     FriendItem(name = "zakuril", status = "\u0412 \u0438\u0433\u0440\u0435", primaryColor = primaryColor)
@@ -89,29 +89,29 @@ private fun FriendItem(name: String, status: String, primaryColor: Color) {
             .clip(RoundedCornerShape(8.dp))
             .background(if (isHovered) Color(0xFF1C2028) else Color.Transparent)
             .clickable(interactionSource = interactionSource, indication = null) { }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(28.dp)
+                .size(30.dp)
                 .clip(RoundedCornerShape(7.dp))
                 .background(primaryColor.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = name.first().uppercase(),
-                fontSize = 11.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = primaryColor
             )
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(10.dp))
 
         Column {
-            Text(name, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFFC9D1D9))
-            Text(status, fontSize = 9.sp, color = Color(0xFF484F58))
+            Text(name, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFFE6EDF3))
+            Text(status, fontSize = 12.sp, color = Color(0xFF8B949E))
         }
     }
 }

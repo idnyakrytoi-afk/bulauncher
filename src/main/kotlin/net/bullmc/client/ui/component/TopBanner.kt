@@ -101,19 +101,19 @@ fun TopBanner(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text("BULL MC", fontSize = 32.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 4.sp)
+                Text("BULL MC", fontSize = 36.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 4.sp)
 
                 val mainServer = serverStatuses["play.bullmc.net"]
                 if (mainServer != null && mainServer.online) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
-                            modifier = Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFF34D399))
+                            modifier = Modifier.size(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFF34D399))
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             "${mainServer.playersOnline}/${mainServer.playersMax} игроков",
-                            fontSize = 12.sp,
+                            fontSize = 14.sp,
                             color = Color(0xFF8B949E)
                         )
                     }
@@ -131,8 +131,8 @@ fun TopBanner(
                 Button(
                     onClick = { if (buttonEnabled) onLaunch(nick.value) },
                     modifier = Modifier
-                        .width(240.dp)
-                        .height(50.dp)
+                        .width(260.dp)
+                        .height(54.dp)
                         .graphicsLayer { scaleX = animatedScale; scaleY = animatedScale }
                         .shadow(12.dp, RoundedCornerShape(12.dp)),
                     shape = RoundedCornerShape(12.dp),
@@ -156,14 +156,14 @@ fun TopBanner(
                     ) {
                         if (launchState == "DOWNLOADING" || launchState == "LAUNCHING") {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(buttonText, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
                             }
                         } else {
                             Text(
                                 text = buttonText,
-                                fontSize = 17.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (launchState == "RUNNING") Color(0xFF34D399) else Color.White,
                                 letterSpacing = 2.sp
@@ -174,13 +174,13 @@ fun TopBanner(
 
                 if (statusMessage.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Column(modifier = Modifier.width(240.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(statusMessage, fontSize = 11.sp, color = Color(0xFF8B949E))
+                    Column(modifier = Modifier.width(260.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(statusMessage, fontSize = 13.sp, color = Color(0xFF8B949E))
                         if (launchState == "DOWNLOADING") {
                             Spacer(modifier = Modifier.height(4.dp))
                             LinearProgressIndicator(
                                 progress = progress,
-                                modifier = Modifier.width(240.dp).height(3.dp).clip(RoundedCornerShape(2.dp)),
+                                modifier = Modifier.width(260.dp).height(4.dp).clip(RoundedCornerShape(2.dp)),
                                 color = primaryColor,
                                 backgroundColor = Color(0xFF21262D)
                             )
@@ -192,20 +192,20 @@ fun TopBanner(
             Spacer(modifier = Modifier.width(24.dp))
 
             Column(
-                modifier = Modifier.width(260.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.width(280.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 TextField(
                     value = nick.value,
                     onValueChange = { nick.value = it; onNickChanged(nick.value) },
-                    placeholder = { Text("Введите ник", color = Color(0xFF484F58), fontSize = 13.sp) },
+                    placeholder = { Text("Введите ник", color = Color(0xFF8B949E), fontSize = 15.sp) },
                     singleLine = true,
-                    textStyle = TextStyle(color = Color(0xFFC9D1D9), fontSize = 13.sp),
-                    modifier = Modifier.fillMaxWidth().height(44.dp),
+                    textStyle = TextStyle(color = Color(0xFFE6EDF3), fontSize = 15.sp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(10.dp),
                     enabled = launchState == "READY",
                     colors = TextFieldDefaults.textFieldColors(
-                        backgroundColor = Color(0xFF161B22),
+                        backgroundColor = Color(0xFF1C2128),
                         cursorColor = primaryColor,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
@@ -215,30 +215,30 @@ fun TopBanner(
                 Box {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth().height(38.dp)
+                            .fillMaxWidth().height(44.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF161B22))
+                            .background(Color(0xFF1C2128))
                             .clickable { if (launchState == "READY") versionMenuExpanded = true }
-                            .padding(horizontal = 12.dp),
+                            .padding(horizontal = 16.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text("MC $selectedVersion", fontSize = 12.sp, color = Color(0xFFC9D1D9))
-                            Text(if (versionMenuExpanded) "\u25B2" else "\u25BC", fontSize = 9.sp, color = Color(0xFF484F58))
+                            Text("MC $selectedVersion", fontSize = 14.sp, color = Color(0xFFE6EDF3))
+                            Text(if (versionMenuExpanded) "\u25B2" else "\u25BC", fontSize = 11.sp, color = Color(0xFF8B949E))
                         }
                     }
 
                     DropdownMenu(
                         expanded = versionMenuExpanded,
                         onDismissRequest = { versionMenuExpanded = false },
-                        modifier = Modifier.width(260.dp).background(Color(0xFF161B22), RoundedCornerShape(10.dp))
+                        modifier = Modifier.width(280.dp).background(Color(0xFF1C2128), RoundedCornerShape(10.dp))
                     ) {
                         versions.forEach { version ->
                             DropdownMenuItem(onClick = {
                                 onVersionSelected(version)
                                 versionMenuExpanded = false
                             }) {
-                                Text(version, fontSize = 12.sp, color = if (version == selectedVersion) primaryColor else Color(0xFFC9D1D9))
+                                Text(version, fontSize = 14.sp, color = if (version == selectedVersion) primaryColor else Color(0xFFE6EDF3))
                             }
                         }
                     }
@@ -250,12 +250,12 @@ fun TopBanner(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFF0D1117))
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(activeProfileName, fontSize = 11.sp, color = Color(0xFF6E7681))
-                        Text(selectedLoader.displayName, fontSize = 11.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
+                        Text(activeProfileName, fontSize = 13.sp, color = Color(0xFF8B949E))
+                        Text(selectedLoader.displayName, fontSize = 13.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

@@ -17,6 +17,7 @@ data class GameProfile(
     var enabledMods: List<String> = emptyList(),
     var serverIp: String = "play.bullmc.net",
     var ramMb: Int = 4096,
+    var gameDir: String = "",
     var createdAt: Long = System.currentTimeMillis()
 ) {
     fun getVersionId(): String {
@@ -25,6 +26,18 @@ data class GameProfile(
             else -> "${mcVersion}-${loaderType.name.lowercase()}-${loaderVersion.ifEmpty { "auto" }}"
         }
     }
+
+    fun getGameDir(): File {
+        val dir = if (gameDir.isEmpty()) File(LauncherPaths.game, "profiles/$id") else File(gameDir)
+        dir.mkdirs()
+        return dir
+    }
+
+    fun getModsDir(): File = File(getGameDir(), "mods").also { it.mkdirs() }
+    fun getVersionsDir(): File = File(getGameDir(), "versions").also { it.mkdirs() }
+    fun getLibrariesDir(): File = File(getGameDir(), "libraries").also { it.mkdirs() }
+    fun getAssetsDir(): File = File(getGameDir(), "assets").also { it.mkdirs() }
+    fun getLogsDir(): File = File(getGameDir(), "logs").also { it.mkdirs() }
 }
 
 object ProfileManager {

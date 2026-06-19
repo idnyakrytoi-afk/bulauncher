@@ -5,12 +5,10 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import net.bullmc.client.core.util.LauncherPaths
 import java.io.File
 
 object ModDownloader {
     private const val MOD_URL = "https://github.com/bullmc/bull-tweaks/releases/download/v1.0.0/bulltweaks-1.0.0.jar"
-    private const val CHECKSUM_URL = "https://github.com/bullmc/bull-tweaks/releases/download/v1.0.0/bulltweaks-1.0.0.jar.sha1"
 
     private val client = HttpClient(CIO) {
         install(HttpTimeout) {
@@ -20,11 +18,9 @@ object ModDownloader {
         followRedirects = true
     }
 
-    suspend fun ensureModInstalled(onProgress: (String, Float) -> Unit = { _, _ -> }): Boolean {
-        val jarFile = ModSettings.getModJarFile()
-        val modsDir = LauncherPaths.mods
-
-        if (!modsDir.exists()) modsDir.mkdirs()
+    suspend fun ensureModInstalled(modsDir: File, onProgress: (String, Float) -> Unit = { _, _ -> }): Boolean {
+        modsDir.mkdirs()
+        val jarFile = File(modsDir, "bulltweaks-1.0.0.jar")
 
         if (jarFile.exists() && jarFile.length() > 0) {
             onProgress("Мод уже установлен", 1f)
@@ -54,13 +50,13 @@ object ModDownloader {
         }
     }
 
-    fun isModInstalled(): Boolean {
-        val jarFile = ModSettings.getModJarFile()
+    fun isModInstalled(modsDir: File): Boolean {
+        val jarFile = File(modsDir, "bulltweaks-1.0.0.jar")
         return jarFile.exists() && jarFile.length() > 0
     }
 
-    fun uninstallMod(): Boolean {
-        val jarFile = ModSettings.getModJarFile()
+    fun uninstallMod(modsDir: File): Boolean {
+        val jarFile = File(modsDir, "bulltweaks-1.0.0.jar")
         return if (jarFile.exists()) jarFile.delete() else true
     }
 }

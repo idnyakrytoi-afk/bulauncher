@@ -55,17 +55,17 @@ private fun NewsCard(modifier: Modifier = Modifier, news: List<NewsItem>, primar
             .padding(16.dp)
     ) {
         Column {
-            Text("\u2605", fontSize = 14.sp, color = primaryColor)
+            Text("\u2605", fontSize = 16.sp, color = primaryColor)
             Spacer(modifier = Modifier.height(10.dp))
-            Text("Новости", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
+            Text("Новости", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
             Spacer(modifier = Modifier.height(8.dp))
 
             if (news.isEmpty()) {
-                Text("Загрузка...", fontSize = 12.sp, color = Color(0xFF484F58))
+                Text("Загрузка...", fontSize = 14.sp, color = Color(0xFF8B949E))
             } else {
                 news.take(3).forEach { item ->
-                    Text(item.title, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFFC9D1D9))
-                    Text(item.content, fontSize = 10.sp, color = Color(0xFF6E7681), maxLines = 2)
+                    Text(item.title, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFFE6EDF3))
+                    Text(item.content, fontSize = 13.sp, color = Color(0xFF8B949E), maxLines = 2)
                     Spacer(modifier = Modifier.height(5.dp))
                 }
             }
@@ -94,12 +94,12 @@ private fun ServerCard(modifier: Modifier = Modifier, label: String, ip: String,
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .size(10.dp)
+                        .clip(RoundedCornerShape(5.dp))
                         .background(if (isOnline) Color(0xFF34D399) else Color(0xFFF87171))
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
+                Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -112,12 +112,12 @@ private fun ServerCard(modifier: Modifier = Modifier, label: String, ip: String,
                 StatRow("Версия", status.version)
                 if (status.motd.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(status.motd, fontSize = 9.sp, color = Color(0xFF484F58), maxLines = 2)
+                    Text(status.motd, fontSize = 12.sp, color = Color(0xFF8B949E), maxLines = 2)
                 }
             } else {
-                Text("Офлайн", fontSize = 12.sp, color = Color(0xFFF87171))
+                Text("Офлайн", fontSize = 14.sp, color = Color(0xFFF87171))
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(ip, fontSize = 10.sp, color = Color(0xFF30363D))
+                Text(ip, fontSize = 13.sp, color = Color(0xFF6E7681))
             }
         }
     }
@@ -126,7 +126,7 @@ private fun ServerCard(modifier: Modifier = Modifier, label: String, ip: String,
 @Composable
 private fun StatRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, fontSize = 11.sp, color = Color(0xFF6E7681))
-        Text(value, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
+        Text(label, fontSize = 13.sp, color = Color(0xFF8B949E))
+        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
     }
 }

@@ -6,36 +6,45 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 data class SidebarItem(
     val label: String,
-    val icon: String,
+    val icon: ImageVector,
     val screen: String
 )
 
 private val items = listOf(
-    SidebarItem("Home", "\u2302", "HOME"),
-    SidebarItem("Mods", "\u2261", "MODS"),
-    SidebarItem("Servers", "\u25CE", "SERVERS"),
-    SidebarItem("Account", "\u263A", "ACCOUNT"),
-    SidebarItem("Settings", "\u2699", "SETTINGS"),
-    SidebarItem("Logs", "\u25A3", "LOGS")
+    SidebarItem("Home", Icons.Default.Home, "HOME"),
+    SidebarItem("Mods", Icons.Default.Build, "MODS"),
+    SidebarItem("Servers", Icons.Default.List, "SERVERS"),
+    SidebarItem("Account", Icons.Default.Person, "ACCOUNT"),
+    SidebarItem("Settings", Icons.Default.Settings, "SETTINGS"),
+    SidebarItem("Logs", Icons.Default.DateRange, "LOGS")
 )
 
 @Composable
 fun Sidebar(currentScreen: String, onNavigate: (String) -> Unit, primaryColor: Color) {
     Box(
         modifier = Modifier
-            .width(68.dp)
+            .width(76.dp)
             .fillMaxHeight()
             .background(Color(0xFF0B0D11))
             .padding(vertical = 16.dp, horizontal = 10.dp)
@@ -47,12 +56,12 @@ fun Sidebar(currentScreen: String, onNavigate: (String) -> Unit, primaryColor: C
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(42.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(primaryColor),
                 contentAlignment = Alignment.Center
             ) {
-                Text("B", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+                Text("B", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -73,7 +82,7 @@ fun Sidebar(currentScreen: String, onNavigate: (String) -> Unit, primaryColor: C
 }
 
 @Composable
-private fun SidebarIcon(icon: String, label: String, isActive: Boolean, primaryColor: Color, onClick: () -> Unit) {
+private fun SidebarIcon(icon: ImageVector, label: String, isActive: Boolean, primaryColor: Color, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
 
@@ -85,14 +94,14 @@ private fun SidebarIcon(icon: String, label: String, isActive: Boolean, primaryC
     val iconColor = when {
         isActive -> primaryColor
         isHovered -> Color(0xFF9CA3AF)
-        else -> Color(0xFF4B5563)
+        else -> Color(0xFF6B7280)
     }
     val indicatorColor = if (isActive) primaryColor else Color.Transparent
 
     Box(
         modifier = Modifier
-            .width(48.dp)
-            .height(52.dp)
+            .width(54.dp)
+            .height(58.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
             .clickable(interactionSource = interactionSource, indication = null) { onClick() },
@@ -102,9 +111,14 @@ private fun SidebarIcon(icon: String, label: String, isActive: Boolean, primaryC
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(icon, fontSize = 18.sp, color = iconColor)
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(label, fontSize = 8.sp, color = iconColor, fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal)
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = iconColor,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(5.dp))
+            Text(label, fontSize = 11.sp, color = iconColor, fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal)
         }
 
         if (isActive) {
@@ -112,7 +126,7 @@ private fun SidebarIcon(icon: String, label: String, isActive: Boolean, primaryC
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .width(3.dp)
-                    .height(20.dp)
+                    .height(22.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(indicatorColor)
             )

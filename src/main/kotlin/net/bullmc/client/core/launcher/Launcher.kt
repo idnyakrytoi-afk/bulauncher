@@ -4,14 +4,13 @@ import net.bullmc.client.core.auth.Auth
 import net.bullmc.client.core.loader.LoaderManager
 import net.bullmc.client.core.loader.LoaderType
 import net.bullmc.client.core.util.LauncherPaths
+import java.io.File
 
 class Launcher {
     private val auth = Auth()
-    private val gameDir = LauncherPaths.game
-    private val mcLauncher = MinecraftLauncher(gameDir, auth)
 
-    fun getGameDir() = LauncherPaths.game
-    fun getModsDir() = LauncherPaths.mods.also { it.mkdirs() }
+    fun getGameDir(profileGameDir: File) = profileGameDir
+    fun getModsDir(profileGameDir: File) = File(profileGameDir, "mods").also { it.mkdirs() }
 
     suspend fun downloadAndLaunch(
         version: String,
@@ -22,10 +21,13 @@ class Launcher {
         loader: LoaderType = LoaderType.VANILLA,
         loaderVersion: String = "",
         enabledModIds: List<String> = emptyList(),
+        gameDir: File,
         onStatus: (String, Float) -> Unit
     ): Process? {
         LauncherPaths.init()
         onStatus("Подготовка...", 0f)
+
+        val mcLauncher = MinecraftLauncher(gameDir, auth)
 
         return try {
             val downloader = MinecraftDownloader(gameDir) { msg, progress ->
@@ -51,13 +53,13 @@ class Launcher {
         }
     }
 
-    fun isInstalled(version: String = "1.20.4"): Boolean {
-        val versionDir = LauncherPaths.versions.resolve(version)
+    fun isInstalled(version: String, versionsDir: File): Boolean {
+        val versionDir = versionsDir.resolve(version)
         return versionDir.resolve("$version.jar").exists() && versionDir.resolve("$version.json").exists()
     }
 
     suspend fun getAvailableVersions(): List<VersionEntry> {
-        val downloader = MinecraftDownloader(gameDir) { _, _ -> }
+        val downloader = MinecraftDownloader(LauncherPaths.game) { _, _ -> }
         return downloader.getAvailableVersions()
     }
 }

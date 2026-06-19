@@ -25,6 +25,7 @@ import net.bullmc.client.core.mod.ModSettings
 import net.bullmc.client.core.mod.VisualsConfig
 import net.bullmc.client.core.mod.HUDConfig
 import net.bullmc.client.core.mod.UtilitiesConfig
+import java.io.File
 
 class ModConfigState(initial: BullTweaksConfig) {
     private val _config = mutableStateOf(initial)
@@ -50,15 +51,16 @@ class ModConfigState(initial: BullTweaksConfig) {
 }
 
 @Composable
-fun ModSettingsScreen() {
+fun ModSettingsScreen(modsDir: File? = null) {
     val cardShape = RoundedCornerShape(12.dp)
+    val modsDirPath = modsDir ?: net.bullmc.client.core.util.LauncherPaths.mods
     val state = remember { ModConfigState(ModSettings.get()) }
-    var modInstalled by remember { mutableStateOf(ModDownloader.isModInstalled()) }
+    var modInstalled by remember { mutableStateOf(ModDownloader.isModInstalled(modsDirPath)) }
 
     LaunchedEffect(Unit) {
         ModSettings.init()
         state.updateVisuals { ModSettings.get().visuals }
-        modInstalled = ModDownloader.isModInstalled()
+        modInstalled = ModDownloader.isModInstalled(modsDirPath)
     }
 
     Column(
@@ -84,7 +86,7 @@ fun ModSettingsScreen() {
                     .background(Color(0xFF2A2A2A))
                     .clickable {
                         if (modInstalled) {
-                            ModDownloader.uninstallMod()
+                            ModDownloader.uninstallMod(modsDirPath)
                             modInstalled = false
                         }
                     }

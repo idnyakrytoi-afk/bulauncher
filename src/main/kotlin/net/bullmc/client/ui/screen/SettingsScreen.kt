@@ -49,7 +49,7 @@ fun SettingsScreen(
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())
     ) {
-        Text("Настройки", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
+        Text("Настройки", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
         Spacer(modifier = Modifier.height(20.dp))
 
         // Profiles
@@ -63,15 +63,15 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Профили", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
+                        Text("Профили", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(primaryColor.copy(alpha = 0.15f))
                                 .clickable { onProfileCreate("Новый профиль") }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
                         ) {
-                            Text("+ Новый", fontSize = 11.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
+                            Text("+ Новый", fontSize = 13.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
                         }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
@@ -84,28 +84,28 @@ fun SettingsScreen(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (isActive) primaryColor.copy(alpha = 0.1f) else Color(0xFF0D1117))
                                 .clickable { onProfileSelected(profile.id) }
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     profile.name,
-                                    fontSize = 12.sp,
-                                    color = if (isActive) Color(0xFFC9D1D9) else Color(0xFF8B949E),
+                                    fontSize = 14.sp,
+                                    color = if (isActive) Color(0xFFE6EDF3) else Color(0xFF8B949E),
                                     fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
                                 )
                                 Text(
                                     "${profile.mcVersion} \u2022 ${profile.loaderType.displayName}",
-                                    fontSize = 10.sp,
-                                    color = Color(0xFF484F58)
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF6E7681)
                                 )
                             }
                             if (isActive) {
-                                Text("\u2713", fontSize = 14.sp, color = primaryColor, fontWeight = FontWeight.Bold)
+                                Text("\u2713", fontSize = 16.sp, color = primaryColor, fontWeight = FontWeight.Bold)
                             }
                         }
-                        Spacer(modifier = Modifier.height(3.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                     }
                 }
             }
@@ -117,7 +117,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(20.dp)
         ) {
             Column {
-                Text("Оперативная память", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
+                Text("Оперативная память", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
                 Spacer(modifier = Modifier.height(12.dp))
 
                 val ramGB = ramMb / 1024f
@@ -128,14 +128,14 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("2 GB", fontSize = 10.sp, color = Color(0xFF484F58))
+                    Text("2 GB", fontSize = 12.sp, color = Color(0xFF6E7681))
                     Text(
                         "${String.format("%.1f", sliderValue.floatValue)} GB",
-                        fontSize = 16.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryColor
                     )
-                    Text("16 GB", fontSize = 10.sp, color = Color(0xFF484F58))
+                    Text("16 GB", fontSize = 12.sp, color = Color(0xFF6E7681))
                 }
 
                 Slider(
@@ -165,8 +165,8 @@ fun SettingsScreen(
                         val selected = ramMb / 1024 == gb
                         Text(
                             "${gb}G",
-                            fontSize = 10.sp,
-                            color = if (selected) primaryColor else Color(0xFF30363D),
+                            fontSize = 12.sp,
+                            color = if (selected) primaryColor else Color(0xFF6E7681),
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier.clickable {
                                 sliderValue.floatValue = gb.toFloat()
@@ -185,13 +185,13 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(20.dp)
         ) {
             Column {
-                Text("Java", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
+                Text("Java", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
                 Spacer(modifier = Modifier.height(8.dp))
 
                 val javaVer = detectJavaVersion(javaPath)
-                Text("Путь: $javaPath", fontSize = 11.sp, color = Color(0xFF6E7681))
+                Text("Путь: $javaPath", fontSize = 13.sp, color = Color(0xFF8B949E))
                 if (javaVer.isNotEmpty()) {
-                    Text("Версия: $javaVer", fontSize = 11.sp, color = Color(0xFF34D399))
+                    Text("Версия: $javaVer", fontSize = 13.sp, color = Color(0xFF34D399))
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -202,8 +202,8 @@ fun SettingsScreen(
                     else if (javaVer.contains("1.8"))
                         "Подходит для Minecraft 1.12 и ниже"
                     else "Версия Java не определена",
-                    fontSize = 10.sp,
-                    color = Color(0xFF484F58)
+                    fontSize = 12.sp,
+                    color = Color(0xFF6E7681)
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -211,7 +211,7 @@ fun SettingsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(34.dp)
+                        .height(38.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(primaryColor.copy(alpha = 0.15f))
                         .clickable {
@@ -222,7 +222,7 @@ fun SettingsScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Выбрать другую Java...", fontSize = 11.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
+                    Text("Выбрать другую Java...", fontSize = 13.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -234,9 +234,9 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(20.dp)
         ) {
             Column {
-                Text("Папка игры", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
+                Text("Папка игры", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(gameDir, fontSize = 11.sp, color = Color(0xFF6E7681))
+                Text(gameDir, fontSize = 13.sp, color = Color(0xFF8B949E))
             }
         }
 
@@ -247,7 +247,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(20.dp)
         ) {
             Column {
-                Text("Тема оформления", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
+                Text("Тема оформления", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -261,31 +261,31 @@ fun SettingsScreen(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (isSelected) primaryColor.copy(alpha = 0.1f) else Color(0xFF0D1117))
                                 .clickable { onThemeChanged(theme) }
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(20.dp)
-                                        .clip(RoundedCornerShape(5.dp))
+                                        .size(24.dp)
+                                        .clip(RoundedCornerShape(6.dp))
                                         .background(themePrimaryColor)
                                 )
 
                                 Text(
                                     ThemeManager.getThemeName(theme),
-                                    fontSize = 12.sp,
-                                    color = if (isSelected) Color(0xFFC9D1D9) else Color(0xFF8B949E),
+                                    fontSize = 14.sp,
+                                    color = if (isSelected) Color(0xFFE6EDF3) else Color(0xFF8B949E),
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
 
                             if (isSelected) {
-                                Text("\u2713", fontSize = 13.sp, color = primaryColor, fontWeight = FontWeight.Bold)
+                                Text("\u2713", fontSize = 16.sp, color = primaryColor, fontWeight = FontWeight.Bold)
                             }
                         }
 
@@ -301,7 +301,7 @@ fun SettingsScreen(
 
         // Моды
         Box(
-            modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(16.dp)
+            modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(18.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -309,9 +309,9 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Моды и шейдеры", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFC9D1D9))
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(modsDir, fontSize = 10.sp, color = Color(0xFF484F58))
+                    Text("Моды и шейдеры", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFE6EDF3))
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(modsDir, fontSize = 12.sp, color = Color(0xFF6E7681))
                 }
 
                 Box(
@@ -319,9 +319,9 @@ fun SettingsScreen(
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color(0xFF0D1117))
                         .clickable { onOpenModsFolder() }
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Text("\u2197 Открыть", fontSize = 11.sp, color = primaryColor)
+                    Text("\u2197 Открыть", fontSize = 13.sp, color = primaryColor)
                 }
             }
         }
@@ -333,9 +333,9 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(20.dp)
         ) {
             Column {
-                Text("Quick Join", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
+                Text("Quick Join", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
                 Spacer(modifier = Modifier.height(6.dp))
-                Text("Сервер для быстрого присоединения", fontSize = 10.sp, color = Color(0xFF484F58))
+                Text("Сервер для быстрого присоединения", fontSize = 13.sp, color = Color(0xFF6E7681))
 
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -344,33 +344,33 @@ fun SettingsScreen(
                 androidx.compose.material.TextField(
                     value = serverInput,
                     onValueChange = { serverInput = it },
-                    placeholder = { Text("play.bullmc.net", color = Color(0xFF484F58), fontSize = 12.sp) },
+                    placeholder = { Text("play.bullmc.net", color = Color(0xFF8B949E), fontSize = 14.sp) },
                     singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(color = Color(0xFFC9D1D9), fontSize = 12.sp),
-                    modifier = Modifier.fillMaxWidth().height(38.dp),
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color(0xFFE6EDF3), fontSize = 14.sp),
+                    modifier = Modifier.fillMaxWidth().height(46.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = androidx.compose.material.TextFieldDefaults.textFieldColors(
-                        backgroundColor = Color(0xFF0D1117),
+                        backgroundColor = Color(0xFF1C2128),
                         cursorColor = primaryColor,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     )
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(34.dp)
+                        .height(40.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(primaryColor.copy(alpha = 0.15f))
+                        .background(primaryColor.copy(alpha = 0.25f))
                         .clickable {
                             onDefaultServerChanged(serverInput)
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Сохранить", fontSize = 11.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
+                    Text("Сохранить", fontSize = 14.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

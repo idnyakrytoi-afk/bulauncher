@@ -284,13 +284,19 @@ class MinecraftLauncher(
         val clientJar = File(versionDir, "$version.jar")
         if (clientJar.exists()) jars.add(clientJar.absolutePath)
 
-        val allLibraries = mutableListOf<JsonElement>()
+        val allLibraries = mutableListOf<Pair<String, JsonObject>>()
 
         val versionJsonFile = File(versionsDir, "$version/$version.json")
         if (versionJsonFile.exists()) {
             val rawJson = Json.parseToJsonElement(versionJsonFile.readText()).jsonObject
             val libraries = rawJson["libraries"] as? JsonArray
-            if (libraries != null) allLibraries.addAll(libraries)
+            if (libraries != null) {
+                for (el in libraries) {
+                    val obj = el as? JsonObject ?: continue
+                    val name = obj["name"]?.jsonPrimitive?.content ?: continue
+                    allLibraries.add(name to obj)
+                }
+            }
         }
 
         if (inheritsFrom != null) {
@@ -298,7 +304,13 @@ class MinecraftLauncher(
             if (parentJsonFile.exists()) {
                 val parentJson = Json.parseToJsonElement(parentJsonFile.readText()).jsonObject
                 val parentLibs = parentJson["libraries"] as? JsonArray
-                if (parentLibs != null) allLibraries.addAll(parentLibs)
+                if (parentLibs != null) {
+                    for (el in parentLibs) {
+                        val obj = el as? JsonObject ?: continue
+                        val name = obj["name"]?.jsonPrimitive?.content ?: continue
+                        allLibraries.add(name to obj)
+                    }
+                }
 
                 val parentJar = File(versionsDir, "$inheritsFrom/$inheritsFrom.jar")
                 if (parentJar.exists() && !jars.contains(parentJar.absolutePath)) {
@@ -307,10 +319,17 @@ class MinecraftLauncher(
             }
         }
 
-        for (libElement in allLibraries) {
-            val lib = libElement as? JsonObject ?: continue
-            if (!rulesMatchLibrary(lib)) continue
+        val deduped = linkedMapOf<String, JsonObject>()
+        for ((name, lib) in allLibraries) {
+            val parts = name.split(":")
+            if (parts.size >= 3) {
+                val artifactKey = "${parts[0]}:${parts[1]}"
+                deduped[artifactKey] = lib
+            }
+        }
 
+        for ((_, lib) in deduped) {
+            if (!rulesMatchLibrary(lib)) continue
             val path = resolveLibraryPath(lib)
             if (path != null) {
                 val file = File(librariesDir, path)

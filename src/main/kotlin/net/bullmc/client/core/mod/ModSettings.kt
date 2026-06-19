@@ -7,14 +7,20 @@ import net.bullmc.client.core.util.LauncherPaths
 import java.io.File
 
 object ModSettings {
-    private val configFile: File get() = File(LauncherPaths.game, "bulltweaks-config.json")
+    private var gameDir: File = LauncherPaths.game
+
+    private val configFile: File get() = File(gameDir, "bulltweaks-config.json")
+    private val modsDir: File get() = File(gameDir, "mods")
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
 
     @Volatile
     private var current: BullTweaksConfig = BullTweaksConfig()
 
-    fun init() {
+    fun init(gameDirOverride: File? = null) {
         LauncherPaths.init()
+        if (gameDirOverride != null) {
+            gameDir = gameDirOverride
+        }
         if (configFile.exists()) {
             try {
                 current = json.decodeFromString<BullTweaksConfig>(configFile.readText())
@@ -44,7 +50,7 @@ object ModSettings {
         }
     }
 
-    fun getModJarFile(): File = File(LauncherPaths.mods, "bulltweaks-1.0.0.jar")
+    fun getModJarFile(): File = File(modsDir, "bulltweaks-1.0.0.jar")
     fun isModInstalled(): Boolean = getModJarFile().exists()
 }
 
