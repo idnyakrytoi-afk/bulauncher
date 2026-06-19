@@ -39,11 +39,13 @@ import net.bullmc.client.api.NewsItem
 import net.bullmc.client.api.ServerApi
 import net.bullmc.client.api.ServerStatus
 import net.bullmc.client.core.auth.Auth
+import net.bullmc.client.core.auth.MicrosoftAuth
 import net.bullmc.client.core.launcher.Launcher
 import net.bullmc.client.core.loader.LoaderType
 import net.bullmc.client.core.profile.GameProfile
 import net.bullmc.client.core.profile.ProfileManager
-import net.bullmc.client.core.util.LauncherPaths
+import net.bullmc.client.core.mod.ModUpdateChecker
+import net.bullmc.client.core.util.*
 import net.bullmc.client.theme.ThemeManager
 import net.bullmc.client.theme.ThemeName
 import net.bullmc.client.ui.component.*
@@ -66,7 +68,43 @@ fun main() = application {
 
     val auth = remember { Auth() }
     val launcher = remember { Launcher() }
+    val microsoftAuth = remember { MicrosoftAuth().also { it.init() } }
     val coroutineScope = rememberCoroutineScope()
+
+    // Discord RPC
+    LaunchedEffect(Unit) {
+        try { DiscordManager.init() } catch (_: Exception) {}
+    }
+
+    // Auto-download Java if missing
+    var javaReady by remember { mutableStateOf(false) }
+    var javaDownloadMsg by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val bundled = JavaDownloader.findJavaInDir(LauncherPaths.jre)
+            if (bundled != null) {
+                javaReady = true
+            } else {
+                val saved = auth.getJavaPath()
+                if (saved != "java" && File(saved).exists()) {
+                    javaReady = true
+                } else {
+                    javaDownloadMsg = "Скачивание Java 21..."
+                    val downloaded = JavaDownloader.downloadJava(LauncherPaths.jre) { msg, _ ->
+                        javaDownloadMsg = msg
+                    }
+                    if (downloaded != null) {
+                        auth.saveJavaPath(downloaded)
+                        javaReady = true
+                        javaDownloadMsg = "Java установлена!"
+                    } else {
+                        javaDownloadMsg = "Java не найдена. Установите вручную."
+                        javaReady = true
+                    }
+                }
+            }
+        }
+    }
 
     // Загружаем сохраненную тему
     val savedThemeName = remember { auth.getTheme() }
@@ -132,7 +170,6 @@ fun main() = application {
         launch {
             news = ServerApi.getNews()
             
-            // Проверка обновлений
             val updateDownloadUrl = ServerApi.checkLauncherUpdate("1.0")
             if (updateDownloadUrl != null) {
                 updateUrl = updateDownloadUrl
@@ -151,6 +188,23 @@ fun main() = application {
                 val status = ServerApi.getServerStatus(ip)
                 serverStatuses = serverStatuses + (ip to status)
             }
+
+            // Auto-check mod updates
+            val modsDirFile = File(modsDir)
+            if (modsDirFile.exists() && modsDirFile.listFiles()?.isNotEmpty() == true) {
+                withContext(Dispatchers.IO) {
+                    val updates = ModUpdateChecker.checkForUpdates(modsDirFile, selectedVersion, selectedLoader)
+                    if (updates.isNotEmpty()) {
+                        logLines = logLines + "[UPDATE] Найдено ${updates.size} обновлений модов"
+                        updates.forEach { update ->
+                            logLines = logLines + "[UPDATE] ${update.name}: ${update.currentVersion} -> ${update.latestVersion}"
+                        }
+                    }
+                }
+            }
+
+            // Set Discord idle
+            try { DiscordManager.setIdle() } catch (_: Exception) {}
         }
     }
 
@@ -159,6 +213,7 @@ fun main() = application {
         isGameRunning = true
         launchState = "RUNNING"
         statusMessage = "Игра запущена"
+        try { DiscordManager.setPlaying(selectedVersion, defaultServer) } catch (_: Exception) {}
         launch {
             withContext(Dispatchers.Main) {
                 logLines = logLines + "[LAUNCHER] Процесс PID=${proc.pid()}, isAlive=${proc.isAlive}"
@@ -184,14 +239,31 @@ fun main() = application {
                 logLines = logLines + "[LAUNCHER] Процесс завершён, exitCode=$exitCode"
                 isGameRunning = false
                 launchState = "READY"
-                statusMessage = "Игра завершена (код: $exitCode)"
                 gameProcess = null
+
+                if (exitCode != 0) {
+                    val gameDirFile = File(gameDir)
+                    val crash = CrashAnalyzer.analyzeLog(gameDirFile)
+                    if (crash != null) {
+                        statusMessage = "Краш: ${crash.summary}"
+                        logLines = logLines + "[CRASH] ${crash.cause}"
+                        logLines = logLines + "[CRASH] Решение: ${crash.suggestion}"
+                    } else {
+                        statusMessage = "Игра завершена с ошибкой (код: $exitCode)"
+                    }
+                } else {
+                    statusMessage = "Игра завершена"
+                }
+                try { DiscordManager.setIdle() } catch (_: Exception) {}
             }
         }
     }
 
     Window(
-        onCloseRequest = ::exitApplication,
+        onCloseRequest = {
+            try { DiscordManager.shutdown() } catch (_: Exception) {}
+            exitApplication()
+        },
         state = windowState,
         title = "BullMC Client",
         resizable = false,
@@ -302,6 +374,7 @@ fun main() = application {
                                     statusMessage = "Подготовка..."
                                     progress = 0f
                                     logLines = emptyList()
+                                    try { DiscordManager.setDownloading("Скачивание $selectedVersion") } catch (_: Exception) {}
 
                                     coroutineScope.launch {
                                         try {
@@ -439,6 +512,41 @@ fun main() = application {
 
                         "LOGS" -> {
                             LogScreen(logLines = logLines, isGameRunning = isGameRunning, primaryColor = ThemeManager.getPrimaryColor(currentTheme))
+                        }
+
+                        "SERVERS" -> {
+                            var savedServerList by remember { mutableStateOf(auth.getSavedServers()) }
+                            ServerBrowserScreen(
+                                primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                savedServers = savedServerList,
+                                onAddServer = { ip ->
+                                    savedServerList = savedServerList + ip
+                                    auth.saveServers(savedServerList)
+                                },
+                                onRemoveServer = { ip ->
+                                    savedServerList = savedServerList - ip
+                                    auth.saveServers(savedServerList)
+                                },
+                                onJoinServer = { ip ->
+                                    defaultServer = ip
+                                    auth.setDefaultServer(ip)
+                                    currentScreen = "HOME"
+                                }
+                            )
+                        }
+
+                        "ACCOUNT" -> {
+                            AuthScreen(
+                                microsoftAuth = microsoftAuth,
+                                primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                onAuthComplete = { name ->
+                                    if (name.isNotEmpty()) {
+                                        savedNick = name
+                                        auth.savePlayerNick(name)
+                                    }
+                                    currentScreen = "HOME"
+                                }
+                            )
                         }
                             }
                         }

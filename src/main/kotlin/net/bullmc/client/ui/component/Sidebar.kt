@@ -25,6 +25,8 @@ data class SidebarItem(
 private val items = listOf(
     SidebarItem("Home", "\u2302", "HOME"),
     SidebarItem("Mods", "\u2261", "MODS"),
+    SidebarItem("Servers", "\u25CE", "SERVERS"),
+    SidebarItem("Account", "\u263A", "ACCOUNT"),
     SidebarItem("Settings", "\u2699", "SETTINGS"),
     SidebarItem("Logs", "\u25A3", "LOGS")
 )

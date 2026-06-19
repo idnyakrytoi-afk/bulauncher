@@ -104,6 +104,16 @@ class Auth {
         return version to mods
     }
 
+    fun getSavedServers(): List<String> {
+        val servers = readLines().find { it.startsWith("servers=") }?.substringAfter("servers=") ?: ""
+        return if (servers.isEmpty()) listOf("play.bullmc.net", "yt.bullmc.net") else servers.split("|")
+    }
+
+    fun saveServers(servers: List<String>) {
+        val lines = readLines().filter { !it.startsWith("servers=") }
+        writeLines(lines + "servers=${servers.joinToString("|")}")
+    }
+
     fun getConfigDir(): File = LauncherPaths.root
 
     private fun readLines(): List<String> {
