@@ -13,22 +13,13 @@ repositories {
 }
 
 dependencies {
-    // UI Фреймворк Compose
     implementation(compose.desktop.currentOs)
-    
-    // HTTP клиент Ktor для связи с сервером
     implementation("io.ktor:ktor-client-core:2.3.6")
     implementation("io.ktor:ktor-client-cio:2.3.6")
     implementation("io.ktor:ktor-client-content-negotiation:2.3.6")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.6")
-    
-    // JSON парсер
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-
-    // Корутины для async операций
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
-
-    // SQLite для локальной БД
     implementation("org.xerial:sqlite-jdbc:3.44.1.0")
 }
 
@@ -41,4 +32,12 @@ compose.desktop {
             packageVersion = "1.0.0"
         }
     }
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "net.bullmc.client.MainKt"
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
 }

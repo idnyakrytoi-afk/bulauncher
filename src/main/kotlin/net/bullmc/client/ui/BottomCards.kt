@@ -26,25 +26,16 @@ fun BottomCards(
     primaryColor: Color
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(250.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier.fillMaxWidth().height(200.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        NewsCard(modifier = Modifier.weight(1f), news = news, primaryColor = primaryColor)
+        NewsCard(modifier = Modifier.weight(1.2f), news = news, primaryColor = primaryColor)
 
         val mainStatus = serverStatuses["play.bullmc.net"]
         val ytStatus = serverStatuses["yt.bullmc.net"]
 
-        ServerCard(
-            modifier = Modifier.weight(1f),
-            label = "Survival",
-            status = mainStatus
-        )
-
-        ServerCard(
-            modifier = Modifier.weight(1f),
-            label = "Creative",
-            status = ytStatus
-        )
+        ServerCard(modifier = Modifier.weight(1f), label = "Survival", ip = "play.bullmc.net", status = mainStatus)
+        ServerCard(modifier = Modifier.weight(1f), label = "Creative", ip = "yt.bullmc.net", status = ytStatus)
     }
 }
 
@@ -58,24 +49,24 @@ private fun NewsCard(modifier: Modifier = Modifier, news: List<NewsItem>, primar
         modifier = modifier
             .fillMaxHeight()
             .clip(cardShape)
-            .shadow(6.dp, cardShape)
-            .background(if (isHovered) Color(0xFF232323) else Color(0xFF1E1E1E))
+            .shadow(4.dp, cardShape)
+            .background(if (isHovered) Color(0xFF1C2028) else Color(0xFF161B22))
             .clickable(interactionSource = interactionSource, indication = null) { }
             .padding(16.dp)
     ) {
         Column {
-            Box(modifier = Modifier.size(width = 32.dp, height = 3.dp).background(primaryColor, RoundedCornerShape(2.dp)))
-            Spacer(modifier = Modifier.height(12.dp))
-            Text("Новости", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("\u2605", fontSize = 14.sp, color = primaryColor)
+            Spacer(modifier = Modifier.height(10.dp))
+            Text("Новости", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
             Spacer(modifier = Modifier.height(8.dp))
 
             if (news.isEmpty()) {
-                Text("Загрузка...", fontSize = 12.sp, color = Color(0xFF666666))
+                Text("Загрузка...", fontSize = 12.sp, color = Color(0xFF484F58))
             } else {
                 news.take(3).forEach { item ->
-                    Text(item.title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                    Text(item.content, fontSize = 11.sp, color = Color(0xFF888888), maxLines = 2)
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(item.title, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFFC9D1D9))
+                    Text(item.content, fontSize = 10.sp, color = Color(0xFF6E7681), maxLines = 2)
+                    Spacer(modifier = Modifier.height(5.dp))
                 }
             }
         }
@@ -83,7 +74,7 @@ private fun NewsCard(modifier: Modifier = Modifier, news: List<NewsItem>, primar
 }
 
 @Composable
-private fun ServerCard(modifier: Modifier = Modifier, label: String, status: ServerStatus?) {
+private fun ServerCard(modifier: Modifier = Modifier, label: String, ip: String, status: ServerStatus?) {
     val cardShape = RoundedCornerShape(12.dp)
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
@@ -94,8 +85,8 @@ private fun ServerCard(modifier: Modifier = Modifier, label: String, status: Ser
         modifier = modifier
             .fillMaxHeight()
             .clip(cardShape)
-            .shadow(6.dp, cardShape)
-            .background(if (isHovered) Color(0xFF232323) else Color(0xFF1E1E1E))
+            .shadow(4.dp, cardShape)
+            .background(if (isHovered) Color(0xFF1C2028) else Color(0xFF161B22))
             .clickable(interactionSource = interactionSource, indication = null) { }
             .padding(16.dp)
     ) {
@@ -105,28 +96,28 @@ private fun ServerCard(modifier: Modifier = Modifier, label: String, status: Ser
                     modifier = Modifier
                         .size(8.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(if (isOnline) Color(0xFF43A047) else Color(0xFFE53935))
+                        .background(if (isOnline) Color(0xFF34D399) else Color(0xFFF87171))
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             if (status != null && isOnline) {
                 StatRow("Статус", "Онлайн")
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 StatRow("Игроки", "${status.playersOnline}/${status.playersMax}")
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 StatRow("Версия", status.version)
                 if (status.motd.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(status.motd, fontSize = 10.sp, color = Color(0xFF666666), maxLines = 2)
+                    Text(status.motd, fontSize = 9.sp, color = Color(0xFF484F58), maxLines = 2)
                 }
             } else {
-                Text("Офлайн", fontSize = 13.sp, color = Color(0xFFE53935))
+                Text("Офлайн", fontSize = 12.sp, color = Color(0xFFF87171))
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(status?.ip ?: "", fontSize = 11.sp, color = Color(0xFF555555))
+                Text(ip, fontSize = 10.sp, color = Color(0xFF30363D))
             }
         }
     }
@@ -135,7 +126,7 @@ private fun ServerCard(modifier: Modifier = Modifier, label: String, status: Ser
 @Composable
 private fun StatRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, fontSize = 12.sp, color = Color(0xFF888888))
-        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(label, fontSize = 11.sp, color = Color(0xFF6E7681))
+        Text(value, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
     }
 }

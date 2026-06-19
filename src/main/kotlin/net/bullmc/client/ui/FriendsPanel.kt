@@ -23,65 +23,56 @@ fun FriendsPanel(primaryColor: Color) {
 
     Box(
         modifier = Modifier
-            .width(260.dp)
+            .width(240.dp)
             .fillMaxHeight()
             .padding(start = 8.dp)
             .shadow(4.dp, panelShape)
-            .background(Color(0xFF1E1E1E), panelShape)
-            .padding(16.dp)
+            .background(Color(0xFF161B22), panelShape)
+            .padding(14.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Text(
-                text = "Friends",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "\u0414\u0440\u0443\u0437\u044C\u044F",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFC9D1D9)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(primaryColor.copy(alpha = 0.15f))
+                        .clickable {},
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("+", fontSize = 12.sp, color = primaryColor, fontWeight = FontWeight.Bold)
+                }
+            }
 
             Text(
-                text = "Онлайн: 3",
+                text = "\u25CF  3 \u0432 \u0441\u0435\u0442\u0438",
                 fontSize = 11.sp,
-                color = Color(0xFF43A047),
-                modifier = Modifier.padding(bottom = 16.dp)
+                color = Color(0xFF34D399),
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
             )
 
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .background(Color(0xFF161616), RoundedCornerShape(10.dp))
-                    .padding(8.dp)
+                    .background(Color(0xFF0D1117), RoundedCornerShape(10.dp))
+                    .padding(6.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FriendItem(name = "zakuril", status = "В игре", primaryColor = primaryColor)
-                    FriendItem(name = "player228", status = "В лобби", primaryColor = primaryColor)
-                    FriendItem(name = "DarkLord", status = "Онлайн", primaryColor = primaryColor)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    FriendItem(name = "zakuril", status = "\u0412 \u0438\u0433\u0440\u0435", primaryColor = primaryColor)
+                    FriendItem(name = "player228", status = "\u0412 \u043B\u043E\u0431\u0431\u0438", primaryColor = primaryColor)
+                    FriendItem(name = "DarkLord", status = "\u041E\u043D\u043B\u0430\u0439\u043D", primaryColor = primaryColor)
                 }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            val btnInteraction = remember { MutableInteractionSource() }
-            val btnHovered by btnInteraction.collectIsHoveredAsState()
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(42.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        if (btnHovered) primaryColor.copy(alpha = 0.9f) else primaryColor
-                    )
-                    .clickable(interactionSource = btnInteraction, indication = null) { },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "+ Add Friend",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
             }
         }
     }
@@ -96,31 +87,31 @@ private fun FriendItem(name: String, status: String, primaryColor: Color) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isHovered) Color(0xFF252525) else Color(0xFF1E1E1E))
+            .background(if (isHovered) Color(0xFF1C2028) else Color.Transparent)
             .clickable(interactionSource = interactionSource, indication = null) { }
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF2A2A2A)),
+                .size(28.dp)
+                .clip(RoundedCornerShape(7.dp))
+                .background(primaryColor.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = name.first().uppercase(),
-                fontSize = 14.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = primaryColor
             )
         }
 
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Column {
-            Text(name, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.White)
-            Text(status, fontSize = 10.sp, color = Color(0xFF666666))
+            Text(name, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFFC9D1D9))
+            Text(status, fontSize = 9.sp, color = Color(0xFF484F58))
         }
     }
 }

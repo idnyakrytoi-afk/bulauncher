@@ -58,14 +58,16 @@ fun LoaderScreen(
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState())
     ) {
-        Text("Лоадер и моды", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text("Лоадер и моды", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
+        Text("Настройте мод-лоадер и установите моды", fontSize = 12.sp, color = Color(0xFF484F58), modifier = Modifier.padding(top = 2.dp))
         Spacer(modifier = Modifier.height(20.dp))
 
+        // Loader selection
         Box(
-            modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF1E1E1E)).padding(20.dp)
+            modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(20.dp)
         ) {
             Column {
-                Text("Выбор лоадера", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text("Выбор лоадера", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
                 Spacer(modifier = Modifier.height(12.dp))
 
                 val loaders = LoaderType.entries
@@ -84,7 +86,7 @@ fun LoaderScreen(
                                     .height(64.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(
-                                        if (isSelected) primaryColor.copy(alpha = 0.3f) else Color(0xFF2A2A2A)
+                                        if (isSelected) primaryColor.copy(alpha = 0.15f) else Color(0xFF0D1117)
                                     )
                                     .clickable {
                                         onLoaderChanged(loader)
@@ -98,13 +100,13 @@ fun LoaderScreen(
                                         loader.icon,
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) primaryColor else Color(0xFF888888)
+                                        color = if (isSelected) primaryColor else Color(0xFF484F58)
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         loader.displayName,
                                         fontSize = 10.sp,
-                                        color = if (isSelected) Color.White else Color(0xFFAAAAAA),
+                                        color = if (isSelected) Color(0xFFC9D1D9) else Color(0xFF6E7681),
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
@@ -115,24 +117,28 @@ fun LoaderScreen(
                 }
 
                 if (selectedLoader == LoaderType.VANILLA) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Vanilla — чистый Minecraft без модов", fontSize = 11.sp, color = Color(0xFF666666))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Vanilla — чистый Minecraft без модов", fontSize = 11.sp, color = Color(0xFF484F58))
+                } else if (selectedLoader == LoaderType.FABRIC || selectedLoader == LoaderType.QUILT) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Fabric API будет скачан автоматически", fontSize = 11.sp, color = Color(0xFF34D399))
                 }
             }
         }
 
+        // Loader version selection
         if (selectedLoader != LoaderType.VANILLA) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Box(
-                modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF1E1E1E)).padding(20.dp)
+                modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(20.dp)
             ) {
                 Column {
-                    Text("Версия ${selectedLoader.displayName}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text("Версия ${selectedLoader.displayName}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
                     if (selectedMcVersion.isNotEmpty()) {
-                        Text("Для MC $selectedMcVersion", fontSize = 11.sp, color = Color(0xFF666666))
+                        Text("Для MC $selectedMcVersion", fontSize = 11.sp, color = Color(0xFF484F58))
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -143,19 +149,17 @@ fun LoaderScreen(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(36.dp)
+                                    .height(34.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) primaryColor else Color(0xFF2A2A2A))
-                                    .clickable {
-                                        loaderChannel = channel
-                                    },
+                                    .background(if (isSelected) primaryColor else Color(0xFF0D1117))
+                                    .clickable { loaderChannel = channel },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     channel.displayName,
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else Color(0xFFAAAAAA)
+                                    color = if (isSelected) Color.White else Color(0xFF6E7681)
                                 )
                             }
                         }
@@ -166,17 +170,17 @@ fun LoaderScreen(
                     if (loaderChannel == LoaderChannel.CUSTOM) {
                         if (versionsLoading) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = primaryColor, strokeWidth = 2.dp)
+                                CircularProgressIndicator(modifier = Modifier.size(14.dp), color = primaryColor, strokeWidth = 2.dp)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Загрузка версий...", fontSize = 12.sp, color = Color(0xFF888888))
+                                Text("Загрузка версий...", fontSize = 11.sp, color = Color(0xFF6E7681))
                             }
                         } else if (fetchedVersions.isNotEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(40.dp)
+                                    .height(38.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFF2A2A2A))
+                                    .background(Color(0xFF0D1117))
                                     .clickable { customExpanded = true }
                                     .padding(horizontal = 14.dp),
                                 contentAlignment = Alignment.CenterStart
@@ -188,17 +192,17 @@ fun LoaderScreen(
                                 ) {
                                     Text(
                                         customVersion.ifEmpty { "Выберите версию" },
-                                        fontSize = 13.sp,
-                                        color = if (customVersion.isEmpty()) Color(0xFF666666) else Color.White
+                                        fontSize = 12.sp,
+                                        color = if (customVersion.isEmpty()) Color(0xFF484F58) else Color(0xFFC9D1D9)
                                     )
-                                    Text(if (customExpanded) "\u25B2" else "\u25BC", fontSize = 10.sp, color = Color(0xFF888888))
+                                    Text(if (customExpanded) "\u25B2" else "\u25BC", fontSize = 9.sp, color = Color(0xFF484F58))
                                 }
                             }
 
                             DropdownMenu(
                                 expanded = customExpanded,
                                 onDismissRequest = { customExpanded = false },
-                                modifier = Modifier.background(Color(0xFF1E1E1E)).width(280.dp).heightIn(max = 300.dp)
+                                modifier = Modifier.background(Color(0xFF161B22)).width(280.dp).heightIn(max = 300.dp)
                             ) {
                                 fetchedVersions.forEach { entry ->
                                     DropdownMenuItem(onClick = {
@@ -208,20 +212,20 @@ fun LoaderScreen(
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
                                                 entry.version,
-                                                fontSize = 13.sp,
-                                                color = if (entry.version == customVersion) primaryColor else Color.White,
+                                                fontSize = 12.sp,
+                                                color = if (entry.version == customVersion) primaryColor else Color(0xFFC9D1D9),
                                                 fontWeight = if (entry.stable) FontWeight.Bold else FontWeight.Normal
                                             )
                                             if (entry.stable) {
                                                 Spacer(modifier = Modifier.width(6.dp))
-                                                Text("stable", fontSize = 9.sp, color = Color(0xFF43A047))
+                                                Text("stable", fontSize = 8.sp, color = Color(0xFF34D399))
                                             }
                                         }
                                     }
                                 }
                             }
                         } else {
-                            Text("Нет доступных версий", fontSize = 12.sp, color = Color(0xFF666666))
+                            Text("Нет доступных версий", fontSize = 11.sp, color = Color(0xFF484F58))
                         }
                     } else {
                         val displayVersion = when (loaderChannel) {
@@ -232,16 +236,16 @@ fun LoaderScreen(
 
                         if (versionsLoading) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = primaryColor, strokeWidth = 2.dp)
+                                CircularProgressIndicator(modifier = Modifier.size(14.dp), color = primaryColor, strokeWidth = 2.dp)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Определение версии...", fontSize = 12.sp, color = Color(0xFF888888))
+                                Text("Определение версии...", fontSize = 11.sp, color = Color(0xFF6E7681))
                             }
                         } else if (displayVersion != null) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(primaryColor.copy(alpha = 0.15f))
+                                    .background(primaryColor.copy(alpha = 0.1f))
                                     .padding(horizontal = 14.dp, vertical = 10.dp)
                             ) {
                                 Row(
@@ -249,16 +253,16 @@ fun LoaderScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(displayVersion, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                                    Text(displayVersion, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                                     Text(
                                         if (loaderChannel == LoaderChannel.STABLE) "Stable" else "Latest",
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF888888)
+                                        fontSize = 10.sp,
+                                        color = Color(0xFF6E7681)
                                     )
                                 }
                             }
                         } else {
-                            Text("Не удалось определить версию. Используйте Custom.", fontSize = 12.sp, color = Color(0xFF888888))
+                            Text("Не удалось определить версию. Используйте Custom.", fontSize = 11.sp, color = Color(0xFF6E7681))
                         }
                     }
 
@@ -266,32 +270,33 @@ fun LoaderScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             "Активная: $selectedLoaderVersion",
-                            fontSize = 11.sp,
-                            color = Color(0xFF555555)
+                            fontSize = 10.sp,
+                            color = Color(0xFF30363D)
                         )
                     }
                 }
             }
         }
 
+        // Mods section
         if (selectedLoader != LoaderType.VANILLA) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             val availableMods = LoaderRegistry.getModsForLoader(selectedLoader)
 
             if (availableMods.isNotEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF1E1E1E)).padding(20.dp)
+                    modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(20.dp)
                 ) {
                     Column {
-                        Text("Моды", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                        Text("Совместимо с $selectedMcVersion", fontSize = 11.sp, color = Color(0xFF666666))
+                        Text("Моды", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
+                        Text("Совместимо с MC $selectedMcVersion", fontSize = 10.sp, color = Color(0xFF484F58))
                         Spacer(modifier = Modifier.height(12.dp))
 
                         val categories = availableMods.groupBy { it.category }
 
                         for ((category, mods) in categories) {
-                            Text(category.displayName, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = primaryColor)
+                            Text(category.displayName, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = primaryColor)
                             Spacer(modifier = Modifier.height(6.dp))
 
                             for (mod in mods) {
@@ -301,23 +306,23 @@ fun LoaderScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(if (isEnabled) primaryColor.copy(alpha = 0.15f) else Color(0xFF262626))
+                                        .background(if (isEnabled) primaryColor.copy(alpha = 0.1f) else Color(0xFF0D1117))
                                         .clickable {
                                             val newMods = if (isEnabled) enabledMods - mod.id else enabledMods + mod.id
                                             onModsChanged(newMods)
                                         }
-                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             mod.name,
-                                            fontSize = 13.sp,
-                                            color = if (isEnabled) Color.White else Color(0xFFBBBBBB),
+                                            fontSize = 12.sp,
+                                            color = if (isEnabled) Color(0xFFC9D1D9) else Color(0xFF8B949E),
                                             fontWeight = if (isEnabled) FontWeight.Bold else FontWeight.Normal
                                         )
-                                        Text(mod.description, fontSize = 10.sp, color = Color(0xFF777777))
+                                        Text(mod.description, fontSize = 9.sp, color = Color(0xFF484F58))
                                     }
 
                                     Checkbox(
@@ -328,11 +333,11 @@ fun LoaderScreen(
                                         },
                                         colors = CheckboxDefaults.colors(
                                             checkedColor = primaryColor,
-                                            uncheckedColor = Color(0xFF555555)
+                                            uncheckedColor = Color(0xFF30363D)
                                         )
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(3.dp))
                             }
                         }
                     }
@@ -340,11 +345,11 @@ fun LoaderScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         val modsDir = net.bullmc.client.core.LauncherPaths.mods
         Box(
-            modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF1E1E1E)).padding(20.dp)
+            modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -352,21 +357,21 @@ fun LoaderScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Папка модов", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(modsDir.absolutePath, fontSize = 11.sp, color = Color(0xFF666666))
+                    Text("Папка модов", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFC9D1D9))
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(modsDir.absolutePath, fontSize = 10.sp, color = Color(0xFF484F58))
                 }
 
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF2A2A2A))
+                        .background(Color(0xFF0D1117))
                         .clickable {
                             try { java.awt.Desktop.getDesktop().open(modsDir) } catch (_: Exception) {}
                         }
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
-                    Text("Открыть", fontSize = 12.sp, color = primaryColor)
+                    Text("\u2197 Открыть", fontSize = 11.sp, color = primaryColor)
                 }
             }
         }

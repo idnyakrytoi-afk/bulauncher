@@ -20,5 +20,4 @@ gradle/wrapper/*.zip
 Thumbs.db
 
 # Local properties
-gradle.properties
 local.properties

@@ -86,6 +86,22 @@ class Auth {
         return readLines().find { it.startsWith("defaultServer=") }?.substringAfter("defaultServer=") ?: "play.bullmc.net"
     }
 
+    fun saveLoaderProfile(mcVersion: String, loader: LoaderType, loaderVersion: String, enabledMods: List<String>) {
+        val key = "$mcVersion:${loader.name}"
+        val lines = readLines().filter { !it.startsWith("loaderProfile:$key:") }
+        val modsStr = enabledMods.joinToString("|")
+        writeLines(lines + "loaderProfile:$key:version=$loaderVersion" + "loaderProfile:$key:mods=$modsStr")
+    }
+
+    fun getLoaderProfile(mcVersion: String, loader: LoaderType): Pair<String, List<String>> {
+        val key = "$mcVersion:${loader.name}"
+        val lines = readLines()
+        val version = lines.find { it == "loaderProfile:$key:version=" }?.substringAfter("=") ?: ""
+        val modsLine = lines.find { it.startsWith("loaderProfile:$key:mods=") }?.substringAfter("=") ?: ""
+        val mods = if (modsLine.isEmpty()) emptyList() else modsLine.split("|")
+        return version to mods
+    }
+
     fun getConfigDir(): File = LauncherPaths.root
 
     private fun readLines(): List<String> {

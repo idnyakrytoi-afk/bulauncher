@@ -37,33 +37,33 @@ fun LogScreen(logLines: List<String>, isGameRunning: Boolean, primaryColor: Colo
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text("Game Logs", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Логи", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
                 Text(
                     "${logLines.size} строк" + if (isGameRunning) " \u2022 Running" else "",
-                    fontSize = 12.sp,
-                    color = if (isGameRunning) Color(0xFF43A047) else Color(0xFF666666)
+                    fontSize = 11.sp,
+                    color = if (isGameRunning) Color(0xFF34D399) else Color(0xFF484F58)
                 )
             }
 
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (autoScroll) primaryColor else Color(0xFF2A2A2A))
+                    .background(if (autoScroll) primaryColor else Color(0xFF161B22))
                     .clickable { autoScroll = !autoScroll }
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                Text("Auto-scroll", fontSize = 11.sp, color = Color.White)
+                Text("Auto-scroll", fontSize = 10.sp, color = Color.White)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Box(
-            modifier = Modifier.fillMaxWidth().weight(1f).clip(cardShape).background(Color(0xFF0A0A0A)).padding(8.dp)
+            modifier = Modifier.fillMaxWidth().weight(1f).clip(cardShape).background(Color(0xFF0D1117)).padding(8.dp)
         ) {
             if (logLines.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Логи пусты. Запустите игру.", fontSize = 13.sp, color = Color(0xFF555555))
+                    Text("Логи пусты. Запустите игру.", fontSize = 12.sp, color = Color(0xFF30363D))
                 }
             } else {
                 LazyColumn(state = listState) {
@@ -71,14 +71,14 @@ fun LogScreen(logLines: List<String>, isGameRunning: Boolean, primaryColor: Colo
                         val color = when {
                             line.contains("ERROR", ignoreCase = true) ||
                             line.contains("Exception", ignoreCase = true) ||
-                            line.contains("FATAL", ignoreCase = true) -> Color(0xFFE53935)
-                            line.contains("WARN", ignoreCase = true) -> Color(0xFFFFA726)
-                            line.contains("INFO", ignoreCase = true) -> Color(0xFF81C784)
-                            else -> Color(0xFFAAAAAA)
+                            line.contains("FATAL", ignoreCase = true) -> Color(0xFFF87171)
+                            line.contains("WARN", ignoreCase = true) -> Color(0xFFFBBF24)
+                            line.contains("INFO", ignoreCase = true) -> Color(0xFF34D399)
+                            else -> Color(0xFF6E7681)
                         }
                         Text(
                             line,
-                            fontSize = 11.sp,
+                            fontSize = 10.sp,
                             color = color,
                             fontFamily = FontFamily.Monospace,
                             lineHeight = 14.sp,

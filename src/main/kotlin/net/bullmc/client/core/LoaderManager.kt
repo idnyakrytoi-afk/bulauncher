@@ -402,14 +402,32 @@ class LoaderManager(
     }
 
     private suspend fun installMods(mcVersion: String, loader: LoaderType, enabledModIds: List<String>) {
-        if (enabledModIds.isEmpty()) return
-
         val modsDir = File(gameDir, "mods")
         modsDir.mkdirs()
 
+        val modrinthApi = ModrinthApi()
+
+        if (loader == LoaderType.FABRIC || loader == LoaderType.QUILT) {
+            onProgress("Скачивание Fabric API...", 0.88f)
+            try {
+                val alreadyHasFabricApi = modsDir.listFiles()?.any {
+                    it.name.lowercase().contains("fabric-api") && it.name.endsWith(".jar")
+                } == true
+                if (!alreadyHasFabricApi) {
+                    modrinthApi.downloadMod("fabric-api", mcVersion, loader, modsDir)
+                    println("[MODS] Installed: Fabric API")
+                } else {
+                    println("[MODS] Fabric API already installed, skipping")
+                }
+            } catch (e: Exception) {
+                println("[MODS] Failed to install Fabric API: ${e.message}")
+            }
+        }
+
+        if (enabledModIds.isEmpty()) return
+
         onProgress("Скачивание модов...", 0.9f)
 
-        val modrinthApi = ModrinthApi()
         for (modId in enabledModIds) {
             val modInfo = LoaderRegistry.availableMods.find { it.id == modId } ?: continue
             try {

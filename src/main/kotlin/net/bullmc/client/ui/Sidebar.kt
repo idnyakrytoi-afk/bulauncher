@@ -23,30 +23,42 @@ data class SidebarItem(
 )
 
 private val items = listOf(
-    SidebarItem("Home", "H", "HOME"),
-    SidebarItem("Friends", "F", "FRIENDS"),
-    SidebarItem("Mods", "M", "MODS"),
-    SidebarItem("Settings", "S", "SETTINGS"),
-    SidebarItem("Logs", "L", "LOGS")
+    SidebarItem("Home", "\u2302", "HOME"),
+    SidebarItem("Mods", "\u2261", "MODS"),
+    SidebarItem("Settings", "\u2699", "SETTINGS"),
+    SidebarItem("Logs", "\u25A3", "LOGS")
 )
 
 @Composable
 fun Sidebar(currentScreen: String, onNavigate: (String) -> Unit, primaryColor: Color) {
     Box(
         modifier = Modifier
-            .width(64.dp)
+            .width(68.dp)
             .fillMaxHeight()
-            .background(Color(0xFF0F0F0F))
-            .padding(vertical = 16.dp, horizontal = 8.dp)
+            .background(Color(0xFF0B0D11))
+            .padding(vertical = 16.dp, horizontal = 10.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(primaryColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("B", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             items.forEach { item ->
                 SidebarIcon(
                     icon = item.icon,
+                    label = item.label,
                     isActive = currentScreen == item.screen,
                     primaryColor = primaryColor,
                     onClick = { onNavigate(item.screen) }
@@ -59,34 +71,49 @@ fun Sidebar(currentScreen: String, onNavigate: (String) -> Unit, primaryColor: C
 }
 
 @Composable
-private fun SidebarIcon(icon: String, isActive: Boolean, primaryColor: Color, onClick: () -> Unit) {
+private fun SidebarIcon(icon: String, label: String, isActive: Boolean, primaryColor: Color, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val bgColor = when {
+        isActive -> primaryColor.copy(alpha = 0.2f)
+        isHovered -> Color(0xFF1A1D24)
+        else -> Color.Transparent
+    }
+    val iconColor = when {
         isActive -> primaryColor
-        isHovered -> Color(0xFF2A2A2A)
-        else -> Color(0xFF1E1E1E)
+        isHovered -> Color(0xFF9CA3AF)
+        else -> Color(0xFF4B5563)
     }
-    val textColor = when {
-        isActive -> Color.White
-        isHovered -> Color(0xFFCCCCCC)
-        else -> Color(0xFF666666)
-    }
+    val indicatorColor = if (isActive) primaryColor else Color.Transparent
 
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .width(48.dp)
+            .height(52.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
             .clickable(interactionSource = interactionSource, indication = null) { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = icon,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = textColor
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(icon, fontSize = 18.sp, color = iconColor)
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(label, fontSize = 8.sp, color = iconColor, fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal)
+        }
+
+        if (isActive) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .width(3.dp)
+                    .height(20.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(indicatorColor)
+            )
+        }
     }
 }

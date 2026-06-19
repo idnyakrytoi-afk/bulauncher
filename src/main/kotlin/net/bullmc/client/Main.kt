@@ -39,8 +39,11 @@ import net.bullmc.client.api.NewsItem
 import net.bullmc.client.api.ServerApi
 import net.bullmc.client.api.ServerStatus
 import net.bullmc.client.core.Auth
+import net.bullmc.client.core.GameProfile
 import net.bullmc.client.core.Launcher
 import net.bullmc.client.core.LauncherPaths
+import net.bullmc.client.core.LoaderType
+import net.bullmc.client.core.ProfileManager
 import net.bullmc.client.ui.*
 import java.awt.Desktop
 import java.io.File
@@ -49,11 +52,12 @@ private const val LAUNCHER_VERSION = "1.0.0"
 
 fun main() = application {
     LauncherPaths.init()
+    ProfileManager.init()
     LauncherPaths.writeLog("Launcher started. user.home=${System.getProperty("user.home")}")
 
     val windowState = rememberWindowState(
-        width = 1100.dp,
-        height = 700.dp,
+        width = 1050.dp,
+        height = 680.dp,
         position = WindowPosition.Aligned(androidx.compose.ui.Alignment.Center)
     )
 
@@ -106,6 +110,20 @@ fun main() = application {
     var selectedLoader by remember { mutableStateOf(net.bullmc.client.core.LoaderType.VANILLA) }
     var selectedLoaderVersion by remember { mutableStateOf("") }
     var enabledMods by remember { mutableStateOf(listOf<String>()) }
+
+    // Profile state
+    var profiles by remember { mutableStateOf(ProfileManager.getProfiles()) }
+    var activeProfile by remember { mutableStateOf(ProfileManager.getActiveProfile()) }
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    // Sync profile state on load
+    LaunchedEffect(Unit) {
+        selectedVersion = activeProfile.mcVersion
+        selectedLoader = activeProfile.loaderType
+        selectedLoaderVersion = activeProfile.loaderVersion
+        enabledMods = activeProfile.enabledMods
+        ramMb = activeProfile.ramMb
+    }
 
     LaunchedEffect(Unit) {
         launch {
@@ -199,10 +217,10 @@ fun main() = application {
                                 Button(
                                     onClick = { showUpdateDialog = false },
                                     colors = androidx.compose.material.ButtonDefaults.buttonColors(
-                                        backgroundColor = Color(0xFF2A2A2A)
+                                        backgroundColor = Color(0xFF21262D)
                                     )
                                 ) {
-                                    Text("Позже", color = Color.White, fontSize = 12.sp)
+                                    Text("Позже", color = Color(0xFF8B949E), fontSize = 12.sp)
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Button(
@@ -222,9 +240,9 @@ fun main() = application {
                                 }
                             }
                         },
-                        title = { Text("Доступно обновление!", color = Color.White, fontSize = 16.sp) },
-                        text = { Text("Нажмите 'Скачать' для обновления лаунчера на новую версию.", color = Color(0xFFCCCCCC), fontSize = 13.sp) },
-                        backgroundColor = Color(0xFF1E1E1E)
+                        title = { Text("Доступно обновление!", color = Color(0xFFC9D1D9), fontSize = 16.sp) },
+                        text = { Text("Нажмите 'Скачать' для обновления лаунчера на новую версию.", color = Color(0xFF8B949E), fontSize = 13.sp) },
+                        backgroundColor = Color(0xFF161B22)
                     )
                 }
                 
@@ -259,11 +277,24 @@ fun main() = application {
                                     savedNick = newNick
                                     auth.setPlayerNickFromProfile(newNick)
                                 },
-                                onVersionSelected = { selectedVersion = it },
+                                onVersionSelected = { ver ->
+                                    selectedVersion = ver
+                                    ProfileManager.updateProfile(activeProfile.id) { mcVersion = ver }
+                                },
+                                activeProfileName = activeProfile.name,
+                                selectedLoader = selectedLoader,
                                 onLaunch = { nick ->
                                     savedNick = nick
                                     auth.savePlayerNick(nick)
                                     auth.saveSettings(ramMb, javaPath)
+                                    ProfileManager.updateProfile(activeProfile.id) {
+                                        mcVersion = selectedVersion
+                                        loaderType = selectedLoader
+                                        loaderVersion = selectedLoaderVersion
+                                        enabledMods = enabledMods
+                                        this.ramMb = ramMb
+                                        serverIp = defaultServer
+                                    }
                                     launchState = "DOWNLOADING"
                                     statusMessage = "Подготовка..."
                                     progress = 0f
@@ -311,20 +342,23 @@ fun main() = application {
                             BottomCards(news = news, serverStatuses = serverStatuses, primaryColor = ThemeManager.getPrimaryColor(currentTheme))
                         }
 
-                        "FRIENDS" -> {
-                            Box(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-                                Text("Friends", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                        }
-
                         "MODS" -> {
                             LoaderScreen(
                                 selectedLoader = selectedLoader,
-                                onLoaderChanged = { selectedLoader = it },
+                                onLoaderChanged = { loader ->
+                                    selectedLoader = loader
+                                    ProfileManager.updateProfile(activeProfile.id) { loaderType = loader }
+                                },
                                 selectedLoaderVersion = selectedLoaderVersion,
-                                onLoaderVersionChanged = { selectedLoaderVersion = it },
+                                onLoaderVersionChanged = { ver ->
+                                    selectedLoaderVersion = ver
+                                    ProfileManager.updateProfile(activeProfile.id) { loaderVersion = ver }
+                                },
                                 enabledMods = enabledMods,
-                                onModsChanged = { enabledMods = it },
+                                onModsChanged = { mods ->
+                                    enabledMods = mods
+                                    ProfileManager.updateProfile(activeProfile.id) { enabledMods = mods }
+                                },
                                 primaryColor = ThemeManager.getPrimaryColor(currentTheme),
                                 selectedMcVersion = selectedVersion
                             )
@@ -360,6 +394,42 @@ fun main() = application {
                                     } catch (e: Exception) {
                                         println("Ошибка открытия папки модов: ${e.message}")
                                     }
+                                },
+                                profiles = profiles,
+                                activeProfileId = activeProfile.id,
+                                onProfileSelected = { id ->
+                                    ProfileManager.setActiveProfile(id)
+                                    activeProfile = ProfileManager.getActiveProfile()
+                                    selectedVersion = activeProfile.mcVersion
+                                    selectedLoader = activeProfile.loaderType
+                                    selectedLoaderVersion = activeProfile.loaderVersion
+                                    enabledMods = activeProfile.enabledMods
+                                    ramMb = activeProfile.ramMb
+                                },
+                                onProfileCreate = { name ->
+                                    val newProfile = GameProfile(name = name)
+                                    ProfileManager.createProfile(newProfile)
+                                    ProfileManager.setActiveProfile(newProfile.id)
+                                    profiles = ProfileManager.getProfiles()
+                                    activeProfile = newProfile
+                                    selectedVersion = newProfile.mcVersion
+                                    selectedLoader = newProfile.loaderType
+                                    selectedLoaderVersion = newProfile.loaderVersion
+                                    enabledMods = newProfile.enabledMods
+                                },
+                                onProfileDelete = { id ->
+                                    ProfileManager.deleteProfile(id)
+                                    profiles = ProfileManager.getProfiles()
+                                    activeProfile = ProfileManager.getActiveProfile()
+                                    selectedVersion = activeProfile.mcVersion
+                                    selectedLoader = activeProfile.loaderType
+                                    selectedLoaderVersion = activeProfile.loaderVersion
+                                    enabledMods = activeProfile.enabledMods
+                                },
+                                onProfileRename = { id, newName ->
+                                    ProfileManager.updateProfile(id) { name = newName }
+                                    profiles = ProfileManager.getProfiles()
+                                    activeProfile = ProfileManager.getActiveProfile()
                                 }
                             )
                         }
@@ -389,7 +459,7 @@ fun main() = application {
                         modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
                             .fillMaxWidth(0.95f)
                             .fillMaxHeight(0.4f)
-                            .background(Color(0xFF0F0F0F), RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                            .background(Color(0xFF0D1117), RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
                             .padding(12.dp)
                     ) {
                         Column(modifier = Modifier.fillMaxSize()) {
@@ -398,17 +468,17 @@ fun main() = application {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Game Logs (F8 для закрытия)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Game Logs (F8 для закрытия)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
                                 Box(
-                                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFF333333))
+                                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFF161B22))
                                         .clickable { logLines = emptyList() }.padding(6.dp)
                                 ) {
-                                    Text("Clear", fontSize = 10.sp, color = Color(0xFFAAAAAA))
+                                    Text("Clear", fontSize = 9.sp, color = Color(0xFF6E7681))
                                 }
                             }
-                            
+
                             Spacer(modifier = Modifier.height(8.dp))
-                            
+
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize().padding(8.dp),
                                 state = rememberLazyListState()
@@ -416,8 +486,8 @@ fun main() = application {
                                 items(logLines) { line ->
                                     Text(
                                         line,
-                                        fontSize = 10.sp,
-                                        color = Color(0xFFAAAAAA),
+                                        fontSize = 9.sp,
+                                        color = Color(0xFF6E7681),
                                         fontFamily = FontFamily.Monospace
                                     )
                                 }
