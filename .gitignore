@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+build/
+*.jar
+
+# Kotlin
+*.class
+*.kt.bak
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local properties
+gradle.properties
+local.properties
