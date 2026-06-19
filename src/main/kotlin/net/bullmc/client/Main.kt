@@ -38,13 +38,16 @@ import kotlinx.coroutines.withContext
 import net.bullmc.client.api.NewsItem
 import net.bullmc.client.api.ServerApi
 import net.bullmc.client.api.ServerStatus
-import net.bullmc.client.core.Auth
-import net.bullmc.client.core.GameProfile
-import net.bullmc.client.core.Launcher
-import net.bullmc.client.core.LauncherPaths
-import net.bullmc.client.core.LoaderType
-import net.bullmc.client.core.ProfileManager
-import net.bullmc.client.ui.*
+import net.bullmc.client.core.auth.Auth
+import net.bullmc.client.core.launcher.Launcher
+import net.bullmc.client.core.loader.LoaderType
+import net.bullmc.client.core.profile.GameProfile
+import net.bullmc.client.core.profile.ProfileManager
+import net.bullmc.client.core.util.LauncherPaths
+import net.bullmc.client.theme.ThemeManager
+import net.bullmc.client.theme.ThemeName
+import net.bullmc.client.ui.component.*
+import net.bullmc.client.ui.screen.*
 import java.awt.Desktop
 import java.io.File
 
@@ -107,7 +110,7 @@ fun main() = application {
 
     val serverIps = listOf("play.bullmc.net", "yt.bullmc.net")
 
-    var selectedLoader by remember { mutableStateOf(net.bullmc.client.core.LoaderType.VANILLA) }
+    var selectedLoader by remember { mutableStateOf(net.bullmc.client.core.loader.LoaderType.VANILLA) }
     var selectedLoaderVersion by remember { mutableStateOf("") }
     var enabledMods by remember { mutableStateOf(listOf<String>()) }
 

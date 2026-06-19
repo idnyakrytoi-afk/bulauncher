@@ -1,4 +1,9 @@
-package net.bullmc.client.core
+package net.bullmc.client.core.launcher
+
+import net.bullmc.client.core.auth.Auth
+import net.bullmc.client.core.loader.LoaderManager
+import net.bullmc.client.core.loader.LoaderType
+import net.bullmc.client.core.util.LauncherPaths
 
 class Launcher {
     private val auth = Auth()

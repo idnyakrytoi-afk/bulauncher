@@ -1,4 +1,4 @@
-package net.bullmc.client.core
+package net.bullmc.client.core.util
 
 import java.io.File
 

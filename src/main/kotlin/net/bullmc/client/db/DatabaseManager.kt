@@ -1,6 +1,6 @@
 package net.bullmc.client.db
 
-import net.bullmc.client.core.LauncherPaths
+import net.bullmc.client.core.util.LauncherPaths
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement

@@ -1,4 +1,4 @@
-package net.bullmc.client
+package net.bullmc.client.theme
 
 import androidx.compose.material.Colors
 import androidx.compose.material.darkColors

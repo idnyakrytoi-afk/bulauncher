@@ -1,5 +1,6 @@
-package net.bullmc.client.core
+package net.bullmc.client.core.launcher
 
+import net.bullmc.client.core.auth.Auth
 import kotlinx.serialization.json.*
 import java.io.File
 

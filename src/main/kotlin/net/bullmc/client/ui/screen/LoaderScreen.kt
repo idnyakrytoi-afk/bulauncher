@@ -1,4 +1,4 @@
-package net.bullmc.client.ui
+package net.bullmc.client.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,10 +16,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import net.bullmc.client.core.LoaderChannel
-import net.bullmc.client.core.LoaderRegistry
-import net.bullmc.client.core.LoaderType
-import net.bullmc.client.core.LoaderVersionEntry
+import net.bullmc.client.core.loader.LoaderChannel
+import net.bullmc.client.core.loader.LoaderRegistry
+import net.bullmc.client.core.loader.LoaderType
+import net.bullmc.client.core.loader.LoaderVersionEntry
 
 @Composable
 fun LoaderScreen(
@@ -347,7 +347,7 @@ fun LoaderScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        val modsDir = net.bullmc.client.core.LauncherPaths.mods
+        val modsDir = net.bullmc.client.core.util.LauncherPaths.mods
         Box(
             modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(16.dp)
         ) {

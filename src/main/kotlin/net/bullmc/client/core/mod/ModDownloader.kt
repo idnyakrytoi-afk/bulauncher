@@ -1,10 +1,11 @@
-package net.bullmc.client.core
+package net.bullmc.client.core.mod
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import net.bullmc.client.core.util.LauncherPaths
 import java.io.File
 
 object ModDownloader {

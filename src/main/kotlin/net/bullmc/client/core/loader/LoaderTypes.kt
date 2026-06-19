@@ -1,4 +1,4 @@
-package net.bullmc.client.core
+package net.bullmc.client.core.loader
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*

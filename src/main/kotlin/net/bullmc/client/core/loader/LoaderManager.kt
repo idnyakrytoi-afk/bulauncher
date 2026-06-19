@@ -1,4 +1,4 @@
-package net.bullmc.client.core
+package net.bullmc.client.core.loader
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -9,6 +9,8 @@ import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import net.bullmc.client.core.mod.ModrinthApi
+import net.bullmc.client.core.util.LauncherPaths
 import java.io.File
 
 @Serializable

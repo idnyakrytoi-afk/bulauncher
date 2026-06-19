@@ -1,8 +1,10 @@
-package net.bullmc.client.core
+package net.bullmc.client.core.profile
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import net.bullmc.client.core.loader.LoaderType
+import net.bullmc.client.core.util.LauncherPaths
 import java.io.File
 
 @Serializable

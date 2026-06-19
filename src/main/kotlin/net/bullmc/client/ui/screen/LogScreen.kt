@@ -1,4 +1,4 @@
-package net.bullmc.client.ui
+package net.bullmc.client.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

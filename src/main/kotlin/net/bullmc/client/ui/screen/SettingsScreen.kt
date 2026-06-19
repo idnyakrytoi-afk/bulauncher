@@ -1,4 +1,4 @@
-package net.bullmc.client.ui
+package net.bullmc.client.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,8 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import net.bullmc.client.ThemeName
-import net.bullmc.client.ThemeManager
+import net.bullmc.client.theme.ThemeName
+import net.bullmc.client.theme.ThemeManager
+import net.bullmc.client.core.profile.GameProfile
 import java.awt.Desktop
 import java.io.File
 
@@ -36,7 +37,7 @@ fun SettingsScreen(
     defaultServer: String,
     onDefaultServerChanged: (String) -> Unit,
     onOpenModsFolder: () -> Unit,
-    profiles: List<net.bullmc.client.core.GameProfile>? = null,
+    profiles: List<GameProfile>? = null,
     activeProfileId: String = "",
     onProfileSelected: (String) -> Unit = {},
     onProfileCreate: (String) -> Unit = {},

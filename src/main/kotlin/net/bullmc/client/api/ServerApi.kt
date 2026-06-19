@@ -10,7 +10,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import net.bullmc.client.core.LauncherPaths
+import net.bullmc.client.core.util.LauncherPaths
 import java.io.File
 
 @Serializable

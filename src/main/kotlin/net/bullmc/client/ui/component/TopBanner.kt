@@ -1,4 +1,4 @@
-package net.bullmc.client.ui
+package net.bullmc.client.ui.component
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import net.bullmc.client.api.ServerStatus
-import net.bullmc.client.core.LoaderType
+import net.bullmc.client.core.loader.LoaderType
 
 @Composable
 fun TopBanner(

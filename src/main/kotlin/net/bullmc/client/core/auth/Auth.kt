@@ -1,5 +1,7 @@
-package net.bullmc.client.core
+package net.bullmc.client.core.auth
 
+import net.bullmc.client.core.util.LauncherPaths
+import net.bullmc.client.core.loader.LoaderType
 import java.io.File
 
 class Auth {

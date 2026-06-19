@@ -1,4 +1,4 @@
-package net.bullmc.client.ui
+package net.bullmc.client.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,12 +19,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import net.bullmc.client.core.BullTweaksConfig
-import net.bullmc.client.core.ModDownloader
-import net.bullmc.client.core.ModSettings
-import net.bullmc.client.core.VisualsConfig
-import net.bullmc.client.core.HUDConfig
-import net.bullmc.client.core.UtilitiesConfig
+import net.bullmc.client.core.mod.BullTweaksConfig
+import net.bullmc.client.core.mod.ModDownloader
+import net.bullmc.client.core.mod.ModSettings
+import net.bullmc.client.core.mod.VisualsConfig
+import net.bullmc.client.core.mod.HUDConfig
+import net.bullmc.client.core.mod.UtilitiesConfig
 
 class ModConfigState(initial: BullTweaksConfig) {
     private val _config = mutableStateOf(initial)
