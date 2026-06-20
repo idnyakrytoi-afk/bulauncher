@@ -152,6 +152,8 @@ fun main() = application {
     var selectedLoaderVersion by remember { mutableStateOf("") }
     var enabledMods by remember { mutableStateOf(listOf<String>()) }
 
+    var autoStartEnabled by remember { mutableStateOf(net.bullmc.client.core.util.AutoStart.isEnabled()) }
+
     // Profile state
     var profiles by remember { mutableStateOf(ProfileManager.getProfiles()) }
     var activeProfile by remember { mutableStateOf(ProfileManager.getActiveProfile()) }
@@ -545,6 +547,11 @@ fun main() = application {
                                     ProfileManager.updateProfile(id) { name = newName }
                                     profiles = ProfileManager.getProfiles()
                                     activeProfile = ProfileManager.getActiveProfile()
+                                },
+                                autoStart = autoStartEnabled,
+                                onAutoStartChanged = { enabled ->
+                                    autoStartEnabled = enabled
+                                    net.bullmc.client.core.util.AutoStart.setEnabled(enabled)
                                 }
                             )
                         }

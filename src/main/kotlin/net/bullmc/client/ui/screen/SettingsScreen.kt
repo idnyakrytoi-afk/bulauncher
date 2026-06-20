@@ -42,7 +42,9 @@ fun SettingsScreen(
     onProfileSelected: (String) -> Unit = {},
     onProfileCreate: (String) -> Unit = {},
     onProfileDelete: (String) -> Unit = {},
-    onProfileRename: (String, String) -> Unit = { _, _ -> }
+    onProfileRename: (String, String) -> Unit = { _, _ -> },
+    autoStart: Boolean = false,
+    onAutoStartChanged: (Boolean) -> Unit = {}
 ) {
     val cardShape = RoundedCornerShape(12.dp)
 
@@ -371,6 +373,43 @@ fun SettingsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Сохранить", fontSize = 14.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Автозапуск
+        Box(
+            modifier = Modifier.fillMaxWidth().clip(cardShape).background(Color(0xFF161B22)).padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Автозапуск", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFE6EDF3))
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text("Запускать лаунчер при старте Windows", fontSize = 12.sp, color = Color(0xFF6E7681))
+                }
+
+                Box(
+                    modifier = Modifier
+                        .width(50.dp)
+                        .height(28.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (autoStart) primaryColor else Color(0xFF30363D))
+                        .clickable { onAutoStartChanged(!autoStart) },
+                    contentAlignment = if (autoStart) Alignment.CenterEnd else Alignment.CenterStart
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(RoundedCornerShape(11.dp))
+                            .background(Color.White)
+                            .padding(3.dp)
+                    )
                 }
             }
         }
