@@ -61,6 +61,24 @@ fun ModBrowserScreen(
     var selectedMod by remember { mutableStateOf<BrowserMod?>(null) }
     var statusMessage by remember { mutableStateOf("") }
     var showSourceMenu by remember { mutableStateOf(false) }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+
+    val categories = listOf(
+        "all" to "\u2605 Все",
+        "optimization" to "\u26A1 Оптимизация",
+        "rendering" to "\uD83C\uDFA8 Рендеринг",
+        "utility" to "\uD83D\uDD27 Утилиты",
+        "technology" to "\u2699\uFE0F Технологии",
+        "adventure" to "\u2694\uFE0F Приключения",
+        "magic" to "\u2728 Магия",
+        "storage" to "\uD83D\uDCE6 Хранилище",
+        "farming" to "\uD83C\uDF3E Фермерство",
+        "decoration" to "\uD83C\uDFE0 Декор",
+        "mobs" to "\uD83D\uDC3E Мобы",
+        "food" to "\uD83C\uDF5C Еда",
+        "library" to "\uD83D\uDCDA Библиотеки",
+        "worldgen" to "\uD83C\uDF0D Генерация мира",
+    )
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp)
@@ -149,10 +167,10 @@ fun ModBrowserScreen(
                                 statusMessage = "Поиск в ${selectedSource.displayName}..."
                                 val results = when (selectedSource) {
                                     ModSource.MODRINTH -> modrinthApi.searchMods(
-                                        searchQuery, mcVersion, loader
+                                        searchQuery, mcVersion, loader, category = selectedCategory
                                     )
                                     ModSource.CURSEFORGE -> curseForgeApi.searchMods(
-                                        searchQuery, mcVersion, loader
+                                        searchQuery, mcVersion, loader, category = selectedCategory
                                     )
                                 }
                                 withContext(Dispatchers.Main) {
@@ -175,6 +193,36 @@ fun ModBrowserScreen(
         if (statusMessage.isNotEmpty() && !isLoading) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(statusMessage, fontSize = 13.sp, color = Color(0xFF8B949E))
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        androidx.compose.foundation.lazy.LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp)
+        ) {
+            items(categories.size) { index ->
+                val (catId, catLabel) = categories[index]
+                val isSelected = if (catId == "all") selectedCategory == null else selectedCategory == catId
+                Box(
+                    modifier = Modifier
+                        .height(32.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (isSelected) primaryColor else Color(0xFF1C2128))
+                        .clickable {
+                            selectedCategory = if (catId == "all") null else catId
+                        }
+                        .padding(horizontal = 14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        catLabel,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) Color.White else Color(0xFF8B949E)
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))

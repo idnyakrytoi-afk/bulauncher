@@ -81,14 +81,15 @@ class ModrinthApi {
         mcVersion: String? = null,
         loader: LoaderType? = null,
         limit: Int = 25,
-        offset: Int = 0
+        offset: Int = 0,
+        category: String? = null
     ): List<BrowserMod> {
         try {
             val url = URLBuilder("https://api.modrinth.com/v2/search").apply {
                 parameters.append("query", query)
                 parameters.append("limit", limit.toString())
                 parameters.append("offset", offset.toString())
-                parameters.append("facets", buildFacets(mcVersion, loader))
+                parameters.append("facets", buildFacets(mcVersion, loader, category))
             }.buildString()
 
             val response = client.get(url)
@@ -256,7 +257,7 @@ class ModrinthApi {
         }
     }
 
-    private fun buildFacets(mcVersion: String?, loader: LoaderType?): String {
+    private fun buildFacets(mcVersion: String?, loader: LoaderType?, category: String? = null): String {
         val facets = mutableListOf<List<String>>()
 
         if (mcVersion != null) {
@@ -264,6 +265,9 @@ class ModrinthApi {
         }
         if (loader != null && loader != LoaderType.VANILLA) {
             facets.add(listOf("loaders:${getLoaderSlug(loader)}"))
+        }
+        if (category != null) {
+            facets.add(listOf("categories:$category"))
         }
         facets.add(listOf("project_type:mod"))
 

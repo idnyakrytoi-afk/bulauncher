@@ -87,12 +87,32 @@ class CurseForgeApi {
         }
     }
 
+    private fun getCategoryId(category: String?): Int {
+        return when (category) {
+            "optimization" -> 4
+            "rendering" -> 5
+            "utility" -> 2
+            "technology" -> 3
+            "adventure" -> 6
+            "magic" -> 8
+            "storage" -> 9
+            "farming" -> 10
+            "decoration" -> 11
+            "mobs" -> 12
+            "food" -> 13
+            "library" -> 21
+            "worldgen" -> 14
+            else -> 0
+        }
+    }
+
     suspend fun searchMods(
         query: String,
         mcVersion: String? = null,
         loader: LoaderType? = null,
         limit: Int = 25,
-        offset: Int = 0
+        offset: Int = 0,
+        category: String? = null
     ): List<BrowserMod> {
         try {
             val url = URLBuilder("$BASE_URL/v1/mods/search").apply {
@@ -106,6 +126,10 @@ class CurseForgeApi {
                 }
                 if (loader != null && loader != LoaderType.VANILLA) {
                     parameters.append("classId", getLoaderClassId(loader).toString())
+                }
+                val catId = getCategoryId(category)
+                if (catId > 0) {
+                    parameters.append("categoryId", catId.toString())
                 }
             }.buildString()
 
