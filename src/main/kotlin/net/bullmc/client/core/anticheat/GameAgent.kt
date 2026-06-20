@@ -467,10 +467,10 @@ object GameAgent {
         "seppuku", "halcyon", "astolfo", "wamy", "vortext", "exhi",
         "dream", "bhop", "nuker", "reach", "killaura", "autoclicker",
         "aimbot", "scaffold", "phase", "blink", "velocity", "antiknockback",
-        "hitbox", "expandhitbox", "combo", "xray", "wallhack", "freecam",
+        "hitbox", "expandhitbox", "combo", "xray", "wallhack",
         "noclip", "fly", "speed", "sprint", "timer", "slow",
         "fastplace", "fastbreak", "autotool", "cheststealer", "invsee",
-        "esp", "tracers", "nametags", "storageesp", "fullbright",
+        "esp", "tracers", "nametags", "storageesp",
         "cheatengine", "inject", "hooker",
         "jigsaw", "hanabi", "drip", "wyld", "dankpvp",
         "brutal", "brutality", "nightx", "sensei", "aurora",
@@ -485,11 +485,16 @@ object GameAgent {
         "bedaura", "totemswap", "hotbarswap",
         "irc", "mass", "massai", "massaiware",
         "hledej", "hledejcz", "hackgaming", "hacklaby",
-        "hackgaming2", "hacklaby2", "hacklaby3"
+        "hackgaming2", "hacklaby2", "hacklaby3",
+        "bedrockminer", "betterpvp", "clientcommands",
+        "chestlocator", "replaymod", "flashback", "elytrautilities",
+        "findme", "forgehax", "worlddownloader", "freecam",
+        "seedcracker", "squake", "tweakeroo", "walljump",
+        "inventoryprofilesnext", "marlowcrystaloptimizer", "inventorymove"
     )
 
     private val BLACKLISTED_CLASS_PATTERNS = listOf(
-        Regex("(?i)(cheat|hack|inject|exploit|trigger|aura|kill|reach|speed|fly|xray|wall|freecam|noclip|scaffold|autoclick|autobow|autocrystal|bhop|phase|blink|velocity|hitbox|combo|noslow|fastplace|fastbreak|autotool|cheststeal|invsee|esp|tracer|nametag|fullbright)"),
+        Regex("(?i)(cheat|hack|inject|exploit|trigger|aura|kill|reach|speed|fly|xray|wall|freecam|noclip|scaffold|autoclick|autobow|autocrystal|bhop|phase|blink|velocity|hitbox|combo|noslow|fastplace|fastbreak|autotool|cheststeal|invsee|esp|tracer|nametag|seedcracker|forgehax|bedrockminer|freecam|tweakeroo|walljump|squake)"),
         Regex("(?i)^(com|net|org|io)\\..*\\.(cheat|hack|exploit|mod)\\."),
     )
 

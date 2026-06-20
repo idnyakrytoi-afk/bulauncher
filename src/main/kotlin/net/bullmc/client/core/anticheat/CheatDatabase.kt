@@ -17,27 +17,45 @@ object CheatDatabase {
         "firedump", "moondump", "hackphoenix", "miningplus",
         "godmode", "killswitch", "exploit", "exploiter", "hackclient",
         "assault", "kamikaze", "ragebot", "triggerbot", "autoclicker",
-        "killaura", "aimbot", "wallhack", "xray", "bhop",
-        "scaffold", "autocrystal", "blink", "phase", "velocity",
-        "hitbox", "expandhitbox", "combo", "nofall", "speed",
-        "fly", "freecam", "noclip", "sprint", "timer",
-        "slow", "fastplace", "fastbreak", "autotool", "cheststealer",
+        "killaura", "aimbot", "wallhack", "scaffold", "autocrystal",
+        "blink", "phase", "hitbox", "expandhitbox", "combo",
+        "nofall", "speed", "fly", "noclip", "timer",
+        "noslow", "fastplace", "fastbreak", "autotool", "cheststealer",
         "invsee", "esp", "tracers", "nametags", "storageesp",
-        "fullbright", "noslow", "fastswing", "autoarmor", "autosoup",
-        "autoeat", "autototem", "entityspeed", "boatfly", "packetfly",
-        "packetspeed", "autobow", "bowaimbot", "arrowaura", "bedaura",
+        "fastswing", "autoarmor", "autosoup", "autoeat", "autototem",
+        "entityspeed", "boatfly", "packetfly", "packetspeed",
+        "autobow", "bowaimbot", "arrowaura", "bedaura",
         "totemswap", "hotbarswap", "mass", "massai", "massaiware",
         "hledej", "hledejcz", "hackgaming", "hacklaby",
         "reach", "reachmod", "anticheck", "anticheat",
-        "nocheatplus", "ncp-bypass", " watchdog-bypass",
-        "vulcan", "vulcan-bypass", "matrix-bypass", "godmode",
-        "capes", "freecape", "capemod"
+        "nocheatplus", "ncp-bypass", "vulcan-bypass", "matrix-bypass",
+        "capes", "freecape", "capemod",
+
+        "bedrock-miner", "bedrockminer",
+        "betterpvp", "better-pvp",
+        "clientcommands",
+        "chestlocator", "chest-locator", "chestlocatormod",
+        "replay-mod", "replaymod", "flashback",
+        "elytra-utilities", "elytrautilities",
+        "findme",
+        "forgehax", "forge-hax",
+        "worlddownloader", "world-downloader", "wdl",
+        "freecam",
+        "seedcracker", "seed-cracker",
+        "step",
+        "squake",
+        "tweakeroo",
+        "walljump", "wall-jump",
+        "xray",
+        "inventoryprofilesnext", "inventory-profiles-next", "ipn",
+        "marlowcrystaloptimizer", "marlow-crystal-optimizer", "marlow",
+        "inventorymove", "inventory-move"
     )
 
     val blacklistedModFilePatterns: List<Regex> = listOf(
         Regex("(?i)^(wurst|impact|baritone|rusherhack|aristois|futureclient|phoenixclient|vape|novoline|huzuni|kiddion|bleachhack|ghostly|liquidbounce|konas|strafe|astolfo|seppuku|halcyon|jello|moonsworth)(?:-|_| ).*\\.jar$"),
-        Regex("(?i)^(killaura|aimbot|autoaim|wallhack|xray|bhop|autoclicker|nofall|scaffold|autocrystal|blink|phase|velocity|hitbox|combo|speed|fly|freecam|noclip|timer|noslow|fastplace|fastbreak|autotool|cheststeal|invsee|esp|tracer|nametag|fullbright)(?:-|_| ).*\\.jar$"),
-        Regex("(?i)^(godmode|exploit|hack|cheat|trigger|aura|reach|mass|brutal|nightx|sensei|aurora|novus|firedump|moondump|hackphoenix|miningplus|killswitch|kamikaze|ragebot|dankpvp|jigsaw|hanabi|drip|wyld)(?:-|_| ).*\\.jar$"),
+        Regex("(?i)^(bedrock.?miner|better.?pvp|clientcommands|chest.?locator|replay.?mod|replaymod|flashback|elytra.?utilities|findme|forgehax|world.?downloader|freecam|seedcracker|step|squake|tweakeroo|wall.?jump|xray|inventory.?profiles.?next|inventorymove|marlow)(?:-|_| ).*\\.jar$"),
+        Regex("(?i)^(killaura|aimbot|autoaim|wallhack|bhop|autoclicker|nofall|scaffold|autocrystal|blink|phase|velocity|hitbox|combo|speed|fly|noclip|timer|noslow|fastplace|fastbreak|autotool|cheststeal|invsee|esp|tracer|nametag)(?:-|_| ).*\\.jar$"),
     )
 
     val blacklistedProcesses: Set<String> = setOf(
@@ -71,7 +89,7 @@ object CheatDatabase {
         "frida", "xposed", "substrate",
         "minhook", "easyhook", "detours",
         "frida-agent", "frida-gadget",
-        "xposed", "edxposed", "lsposed"
+        "edxposed", "lsposed"
     )
 
     val suspiciousJvmArgs: List<Regex> = listOf(
@@ -103,16 +121,15 @@ object CheatDatabase {
         "journeymap", "optifine", "continuity", "lambdynamiclights",
         "plasmo-voice", "proximity-chat", "simple-voice-chat",
         "presence-footsteps", "sound-physics-remastered", "not-enoughanimations",
-        "betterthirdperson", "betterf3", "tweakeroo", "minihud", "litematica",
+        "betterthirdperson", "betterf3", "minihud", "litematica",
         "item-scroller", "tweakmyclient", "inventory-hud", "wthit", "hwyla",
         "jade", "neat", "durability-viewer", "armor-statues", "chisel",
         "bits-and-chisels", "canvas-renderer", "indium", "modelfix",
         "smooth-boot", "auth-me", "fallingtree", "tree-chop",
         "harvest-with-ease", "easy-mining", "netherite-fireproof",
-        "netherite-fire-resistance", "inv-move", "inv-move-reforged",
-        "inventory-sorting", "quick-pickup", "fast-leaf-decay",
-        "leaf-me-alone", "better-grass", "cull-less-leaves", "cull-particles",
-        "more-culling", "sodium-extra", "replay-mod", "spark", "phosphor",
+        "netherite-fire-resistance", "inventory-sorting", "quick-pickup",
+        "fast-leaf-decay", "leaf-me-alone", "better-grass", "cull-less-leaves",
+        "cull-particles", "more-culling", "sodium-extra", "spark", "phosphor",
         "render-morph", "fabric-renderer-api-v1", "fabric-renderer-indigo",
         "fabric-renderer-loader", "fabric-rendering-v0", "fabric-rendering-v1",
         "fabric-rendering-data-attachment-v1", "fabric-resource-loader-v0",
@@ -127,6 +144,7 @@ object CheatDatabase {
         "fabric-loot-tables-v1", "fabric-mining-levels-v1",
         "fabric-tool-action-api-v1", "fabric-block-view-api-v2",
         "fabric-block-view-renderer-api-v1",
+        "fullbrightnesstoggle",
     )
 
     val allowedModFileHashes: Map<String, String> = mapOf(
@@ -137,7 +155,8 @@ object CheatDatabase {
         "wurst", "impact", "meteor", "baritone", "rusherhack",
         "aristois", "futureclient", "phoenixclient", "vape", "novoline",
         "huzuni", "liquidbounce", "konas", "strafe", "astolfo",
-        "seppuku", "halcyon", "jello", "moonsworth", "catalyst"
+        "seppuku", "halcyon", "jello", "moonsworth", "catalyst",
+        "forgehax", "freecam", "xray", "seedcracker"
     )
 
     val blacklistedModMetadataNames: Set<String> = setOf(
@@ -146,7 +165,12 @@ object CheatDatabase {
         "novoline", "huzuni", "liquidbounce", "konas", "strafe",
         "astolfo", "seppuku", "halcyon", "jello", "moonsworth",
         "catalyst", "mass", "massai", "brutal", "nightx",
-        "sensei", "aurora", "novus", "firedump", "moondump"
+        "sensei", "aurora", "novus", "firedump", "moondump",
+        "forgehax", "freecam", "xray", "seedcracker",
+        "bedrock-miner", "betterpvp", "clientcommands",
+        "replay-mod", "flashback", "elytra-utilities",
+        "findme", "world-downloader", "tweakeroo",
+        "walljump", "inventory-profiles-next", "inventorymove", "marlow"
     )
 
     fun isModBlacklisted(fileName: String): Boolean {
@@ -241,8 +265,7 @@ object CheatDatabase {
                     }
                 }
             }
-        } catch (e: Exception) {
-            // Повреждённый или невалидный JAR — пропускаем
+        } catch (_: Exception) {
         }
 
         return violations
