@@ -154,6 +154,9 @@ fun main() = application {
 
     var autoStartEnabled by remember { mutableStateOf(net.bullmc.client.core.util.AutoStart.isEnabled()) }
 
+    var loggedIn by remember { mutableStateOf(microsoftAuth.isLoggedIn() || savedNick.isNotEmpty()) }
+    var loginIsOffline by remember { mutableStateOf(false) }
+
     // Profile state
     var profiles by remember { mutableStateOf(ProfileManager.getProfiles()) }
     var activeProfile by remember { mutableStateOf(ProfileManager.getActiveProfile()) }
@@ -273,6 +276,21 @@ fun main() = application {
         resizable = false,
     ) {
         MaterialTheme(colors = ThemeManager.getColors(currentTheme)) {
+            if (!loggedIn) {
+                LoginWindow(
+                    microsoftAuth = microsoftAuth,
+                    savedNick = savedNick,
+                    primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                    onLoginComplete = { nick, isOffline ->
+                        if (isOffline) {
+                            savedNick = nick
+                            auth.savePlayerNick(nick)
+                        }
+                        loginIsOffline = isOffline
+                        loggedIn = true
+                    }
+                )
+            } else {
             Row(
                 modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background).onKeyEvent { event ->
                     if (event.key == Key.F8) {
@@ -607,6 +625,7 @@ fun main() = application {
                 if (currentScreen == "HOME") {
                     FriendsPanel(primaryColor = ThemeManager.getPrimaryColor(currentTheme))
                 }
+            }
             }
             
             // Консоль логов (F8)

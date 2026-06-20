@@ -372,6 +372,12 @@ class MicrosoftAuth {
         clearTokens()
     }
 
+    fun cancelLogin() {
+        deviceCode = null
+        state = AuthState.IDLE
+        errorMessage = ""
+    }
+
     fun isLoggedIn(): Boolean = state == AuthState.SUCCESS && accessToken.isNotEmpty()
 
     fun getSkinUrl(): String? {
