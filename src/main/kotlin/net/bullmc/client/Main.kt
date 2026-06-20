@@ -456,6 +456,23 @@ fun main() = application {
                             )
                         }
 
+                        "SHOP" -> {
+                            ModBrowserScreen(
+                                primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                mcVersion = selectedVersion,
+                                loader = selectedLoader,
+                                installedModSlugs = enabledMods,
+                                modsDir = activeProfile.getModsDir(),
+                                onModInstalled = { slug ->
+                                    if (slug !in enabledMods) {
+                                        val newMods = enabledMods + slug
+                                        enabledMods = newMods
+                                        ProfileManager.updateProfile(activeProfile.id) { enabledMods = newMods }
+                                    }
+                                }
+                            )
+                        }
+
                         "SETTINGS" -> {
                             SettingsScreen(
                                 ramMb = ramMb,

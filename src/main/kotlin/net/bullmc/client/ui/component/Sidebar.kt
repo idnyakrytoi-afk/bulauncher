@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +35,7 @@ data class SidebarItem(
 private val items = listOf(
     SidebarItem("Home", Icons.Default.Home, "HOME"),
     SidebarItem("Mods", Icons.Default.Build, "MODS"),
+    SidebarItem("Shop", Icons.Default.ShoppingCart, "SHOP"),
     SidebarItem("Servers", Icons.Default.List, "SERVERS"),
     SidebarItem("Account", Icons.Default.Person, "ACCOUNT"),
     SidebarItem("Settings", Icons.Default.Settings, "SETTINGS"),
