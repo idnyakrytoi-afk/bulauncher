@@ -95,6 +95,9 @@ class MinecraftLauncher(
             jvmArgs.add("-Xmx${ramMB}M")
             jvmArgs.add("-Xms${(ramMB / 2).coerceAtLeast(512)}M")
 
+            jvmArgs.add("-XX:+DisableAttachMechanism")
+            jvmArgs.add("-Djdk.attach.allowAttachSelf=false")
+
             // Парсинг аргументов JVM
             val allJvmArgs = mutableListOf<JsonElement>()
             parentJson?.get("arguments")?.jsonObject?.get("jvm")?.let { if (it is JsonArray) allJvmArgs.addAll(it) }
@@ -110,7 +113,12 @@ class MinecraftLauncher(
                             if (content == "-cp") skipNextJvm = true
                             continue
                         }
-                        jvmArgs.add(resolvePlaceholders(content, replacements))
+                        val resolved = resolvePlaceholders(content, replacements)
+                        if (!isSuspiciousJvmArg(resolved)) {
+                            jvmArgs.add(resolved)
+                        } else {
+                            println("[LAUNCH] Заблокирован подозрительный JVM аргумент из version.json: $resolved")
+                        }
                     }
                     is JsonObject -> {
                         if (!rulesMatch(element)) continue
@@ -122,7 +130,12 @@ class MinecraftLauncher(
                                     if (content == "-cp") skipNextJvm = true
                                     continue
                                 }
-                                jvmArgs.add(resolvePlaceholders(content, replacements))
+                                val resolved = resolvePlaceholders(content, replacements)
+                                if (!isSuspiciousJvmArg(resolved)) {
+                                    jvmArgs.add(resolved)
+                                } else {
+                                    println("[LAUNCH] Заблокирован подозрительный JVM аргумент из version.json: $resolved")
+                                }
                             }
                             is JsonArray -> {
                                 var innerSkip = false
@@ -134,14 +147,17 @@ class MinecraftLauncher(
                                             if (content == "-cp") innerSkip = true
                                             continue
                                         }
-                                        jvmArgs.add(resolvePlaceholders(content, replacements))
+                                        val resolved = resolvePlaceholders(content, replacements)
+                                        if (!isSuspiciousJvmArg(resolved)) {
+                                            jvmArgs.add(resolved)
+                                        }
                                     }
                                 }
                             }
-                            else -> {} // Добавлено для компилятора
+                            else -> {}
                         }
                     }
-                    else -> {} // Добавлено для компилятора
+                    else -> {}
                 }
             }
 
@@ -153,7 +169,11 @@ class MinecraftLauncher(
             }
 
             for (extraArg in extraJvmArgs) {
-                jvmArgs.add(extraArg)
+                if (!isSuspiciousJvmArg(extraArg)) {
+                    jvmArgs.add(extraArg)
+                } else {
+                    println("[LAUNCH] Заблокирован подозрительный extra JVM аргумент: $extraArg")
+                }
             }
 
             jvmArgs.addAll(listOf("-cp", classpath))
@@ -451,6 +471,25 @@ class MinecraftLauncher(
         val classifier = parts.getOrNull(3)
         val fileName = if (classifier != null) "$artifactId-$version-$classifier.jar" else "$artifactId-$version.jar"
         return "$group/$artifactId/$version/$fileName"
+    }
+
+    private fun isSuspiciousJvmArg(arg: String): Boolean {
+        val suspiciousPatterns = listOf(
+            Regex("(?i)^-javaagent:(?!.*bullmc-anticheat)"),
+            Regex("(?i)^-agentlib:(?!.*jna|.*jtreg|.*jcov|.*j2pcsc|.*j2gss|.*jaas|.*sunmscapi|.*net)"),
+            Regex("(?i)^-agentpath:(?!.*bullmc)"),
+            Regex("(?i)^-Xbootclasspath"),
+            Regex("(?i)^-XXaltjvm"),
+            Regex("(?i)^-XX:\\+UnlockDiagnosticVMOptions"),
+            Regex("(?i)^-XX:\\+UnlockExperimentalVMOptions"),
+            Regex("(?i)^-Xdebug"),
+            Regex("(?i)^-XX:JDWPTransport"),
+            Regex("(?i)^-agentlib:jdwp"),
+            Regex("(?i)^-Xrunjdwp"),
+            Regex("(?i)^-noverify"),
+            Regex("(?i)^-Xverify:none"),
+        )
+        return suspiciousPatterns.any { it.containsMatchIn(arg) }
     }
 
     private fun rulesMatchLibrary(lib: JsonObject): Boolean {

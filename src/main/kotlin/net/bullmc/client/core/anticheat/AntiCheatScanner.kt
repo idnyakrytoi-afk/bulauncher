@@ -54,6 +54,17 @@ class AntiCheatScanner(
                     )
                 )
             }
+
+            val innerViolations = CheatDatabase.scanModJarInternals(mod)
+            for (detail in innerViolations) {
+                violations.add(
+                    ViolationReport(
+                        playerName = "",
+                        violationType = "MOD_METADATA_BLOCKED",
+                        details = "$fileName: $detail"
+                    )
+                )
+            }
         }
 
         val knownBadHashes = mods.filter { mod ->
@@ -134,7 +145,7 @@ class AntiCheatScanner(
         )
     }
 
-    fun scanJvmArgs(args: List<String>):JvmArgScanResult {
+    fun scanJvmArgs(args: List<String>): JvmArgScanResult {
         val suspicious = mutableListOf<String>()
 
         for (arg in args) {
@@ -232,12 +243,116 @@ class AntiCheatScanner(
         )
     }
 
+    fun scanNativeLibraries(): NativeLibScanResult {
+        val suspicious = mutableListOf<String>()
+
+        val dirsToScan = mutableListOf(gameDir)
+        listOf("bin", "natives", "natives-extracted", "anticheat").forEach { name ->
+            val dir = File(gameDir, name)
+            if (dir.exists()) dirsToScan.add(dir)
+        }
+        val tmpDir = System.getProperty("java.io.tmpdir")
+        if (tmpDir != null) {
+            val tmpBull = File(tmpDir, "bullmc")
+            if (tmpBull.exists()) dirsToScan.add(tmpBull)
+        }
+
+        val extensions = setOf("dll", "so", "dylib", "jnilib")
+
+        for (dir in dirsToScan) {
+            if (!dir.exists() || !dir.isDirectory) continue
+
+            scanDirForNativeLibs(dir, extensions, suspicious)
+        }
+
+        if (suspicious.isNotEmpty()) {
+            for (path in suspicious) {
+                violations.add(
+                    ViolationReport(
+                        playerName = "",
+                        violationType = "SUSPICIOUS_NATIVE_LIB",
+                        details = "Подозрительная нативная библиотека: $path"
+                    )
+                )
+            }
+        }
+
+        return NativeLibScanResult(
+            clean = suspicious.isEmpty(),
+            suspiciousLibs = suspicious
+        )
+    }
+
+    private fun scanDirForNativeLibs(dir: File, extensions: Set<String>, suspicious: MutableList<String>) {
+        try {
+            dir.listFiles()?.forEach { file ->
+                if (file.isFile && file.extension.lowercase() in extensions) {
+                    if (CheatDatabase.isNativeLibBlacklisted(file.name)) {
+                        suspicious.add(file.absolutePath)
+                    }
+                }
+                if (file.isDirectory && file.name != "assets" && file.name != "versions") {
+                    scanDirForNativeLibs(file, extensions, suspicious)
+                }
+            }
+        } catch (_: Exception) {
+            // Нет доступа к директории — пропускаем
+        }
+    }
+
+    fun scanTweakClasses(classpath: String): TweakClassScanResult {
+        val suspicious = mutableListOf<String>()
+        val entries = classpath.split(File.pathSeparator)
+
+        for (entry in entries) {
+            val file = File(entry)
+            if (!file.exists() || file.extension != "jar") continue
+
+            try {
+                java.util.zip.ZipFile(file).use { zip ->
+                    zip.entries().asSequence().forEach { jarEntry ->
+                        if (jarEntry.name.endsWith(".class")) {
+                            val className = jarEntry.name
+                                .replace("/", ".")
+                                .removeSuffix(".class")
+                                .lowercase()
+
+                            if (CheatDatabase.isTweakClassBlacklisted(className)) {
+                                suspicious.add("${file.name} -> ${jarEntry.name}")
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {
+                // Невалидный JAR — пропускаем
+            }
+        }
+
+        if (suspicious.isNotEmpty()) {
+            for (path in suspicious) {
+                violations.add(
+                    ViolationReport(
+                        playerName = "",
+                        violationType = "CHEAT_TWEAK_CLASS",
+                        details = "Запрещённый tweak-класс: $path"
+                    )
+                )
+            }
+        }
+
+        return TweakClassScanResult(
+            clean = suspicious.isEmpty(),
+            suspiciousClasses = suspicious
+        )
+    }
+
     fun fullScan(playerName: String): FullScanResult {
         violations.clear()
 
         val modScan = scanMods()
         val processScan = scanProcesses()
         val gameDirScan = scanGameDir()
+        val nativeLibScan = scanNativeLibraries()
 
         val allViolations = violations.map {
             it.copy(playerName = playerName)
@@ -245,13 +360,14 @@ class AntiCheatScanner(
         violations.clear()
         violations.addAll(allViolations)
 
-        val clean = modScan.clean && processScan.clean && gameDirScan.clean
+        val clean = modScan.clean && processScan.clean && gameDirScan.clean && nativeLibScan.clean
 
         return FullScanResult(
             clean = clean,
             modScan = modScan,
             processScan = processScan,
             gameDirScan = gameDirScan,
+            nativeLibScan = nativeLibScan,
             totalViolations = allViolations.size,
             violations = allViolations
         )
@@ -299,11 +415,22 @@ data class GameDirScanResult(
     val suspiciousFiles: List<String>
 )
 
+data class NativeLibScanResult(
+    val clean: Boolean,
+    val suspiciousLibs: List<String>
+)
+
+data class TweakClassScanResult(
+    val clean: Boolean,
+    val suspiciousClasses: List<String>
+)
+
 data class FullScanResult(
     val clean: Boolean,
     val modScan: ScanResult,
     val processScan: ProcessScanResult,
     val gameDirScan: GameDirScanResult,
+    val nativeLibScan: NativeLibScanResult? = null,
     val totalViolations: Int,
     val violations: List<ViolationReport>
 )

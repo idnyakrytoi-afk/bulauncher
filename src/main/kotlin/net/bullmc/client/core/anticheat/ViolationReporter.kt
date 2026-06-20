@@ -86,7 +86,20 @@ class ViolationReporter {
                 it.violationType in listOf(
                     "BLACKLISTED_MOD",
                     "CHEAT_PROCESS",
-                    "MOD_TAMPERED"
+                    "MOD_TAMPERED",
+                    "CHEAT_IN_CLASSPATH",
+                    "CHEAT_IN_GAME_DIR",
+                    "SUSPICIOUS_NATIVE_LIB",
+                    "CHEAT_TWEAK_CLASS",
+                    "MOD_METADATA_BLOCKED",
+                    "AI_INJECTED_CHEAT_DLL",
+                    "AI_CHEAT_DLL_IN_DIR",
+                    "AI_HOOK_LIBRARY",
+                    "AI_INJECTION_TOOL",
+                    "AI_CODE_CAVE",
+                    "AI_NETWORK_HOOK",
+                    "AI_REFLECTIVE_INJECTION",
+                    "AI_DEBUGGER_DETECTED"
                 )
             },
             message = if (violations.isNotEmpty()) {
