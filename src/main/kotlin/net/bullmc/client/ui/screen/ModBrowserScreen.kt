@@ -63,6 +63,10 @@ fun ModBrowserScreen(
     var showSourceMenu by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var selectedSort by remember { mutableStateOf("relevance") }
+    var filterMcVersion by remember { mutableStateOf(mcVersion) }
+    var showVersionMenu by remember { mutableStateOf(false) }
+
+    val mcVersions = listOf("1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21", "1.20.6", "1.20.4", "1.20.3", "1.20.2", "1.20.1", "1.20", "1.19.4", "1.19.3", "1.19.2", "1.18.2", "1.16.5")
 
     val categories = listOf(
         "all" to "\u2605 Все",
@@ -140,6 +144,46 @@ fun ModBrowserScreen(
                 }
             }
 
+            Box {
+                Box(
+                    modifier = Modifier
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF1C2128))
+                        .clickable { showVersionMenu = true }
+                        .padding(horizontal = 14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "MC $filterMcVersion",
+                            fontSize = 13.sp,
+                            color = Color(0xFFE6EDF3)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("\u25BC", fontSize = 10.sp, color = Color(0xFF8B949E))
+                    }
+                }
+                DropdownMenu(
+                    expanded = showVersionMenu,
+                    onDismissRequest = { showVersionMenu = false },
+                    modifier = Modifier.background(Color(0xFF161B22)).width(120.dp).heightIn(max = 300.dp)
+                ) {
+                    mcVersions.forEach { version ->
+                        DropdownMenuItem(onClick = {
+                            filterMcVersion = version
+                            showVersionMenu = false
+                        }) {
+                            Text(
+                                version,
+                                fontSize = 13.sp,
+                                color = if (version == filterMcVersion) primaryColor else Color(0xFFE6EDF3)
+                            )
+                        }
+                    }
+                }
+            }
+
             TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -168,10 +212,10 @@ fun ModBrowserScreen(
                                 statusMessage = "Поиск в ${selectedSource.displayName}..."
                                 val results = when (selectedSource) {
                                     ModSource.MODRINTH -> modrinthApi.searchMods(
-                                        searchQuery, mcVersion, loader, category = selectedCategory, sort = selectedSort
+                                        searchQuery, filterMcVersion, loader, category = selectedCategory, sort = selectedSort
                                     )
                                     ModSource.CURSEFORGE -> curseForgeApi.searchMods(
-                                        searchQuery, mcVersion, loader, category = selectedCategory, sort = selectedSort
+                                        searchQuery, filterMcVersion, loader, category = selectedCategory, sort = selectedSort
                                     )
                                 }
                                 withContext(Dispatchers.Main) {
