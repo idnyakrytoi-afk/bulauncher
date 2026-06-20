@@ -82,14 +82,21 @@ class ModrinthApi {
         loader: LoaderType? = null,
         limit: Int = 25,
         offset: Int = 0,
-        category: String? = null
+        category: String? = null,
+        sort: String = "relevance"
     ): List<BrowserMod> {
         try {
+            val sortParam = when (sort) {
+                "downloads" -> "downloads"
+                "newest" -> "newest"
+                else -> "relevance"
+            }
             val url = URLBuilder("https://api.modrinth.com/v2/search").apply {
                 parameters.append("query", query)
                 parameters.append("limit", limit.toString())
                 parameters.append("offset", offset.toString())
                 parameters.append("facets", buildFacets(mcVersion, loader, category))
+                parameters.append("index", sortParam)
             }.buildString()
 
             val response = client.get(url)

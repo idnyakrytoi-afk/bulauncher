@@ -112,15 +112,21 @@ class CurseForgeApi {
         loader: LoaderType? = null,
         limit: Int = 25,
         offset: Int = 0,
-        category: String? = null
+        category: String? = null,
+        sort: String = "relevance"
     ): List<BrowserMod> {
         try {
+            val sortField = when (sort) {
+                "downloads" -> "2"
+                "newest" -> "1"
+                else -> "2"
+            }
             val url = URLBuilder("$BASE_URL/v1/mods/search").apply {
                 parameters.append("gameId", GAME_ID_MINECRAFT.toString())
                 parameters.append("searchFilter", query)
                 parameters.append("pageSize", limit.toString())
                 parameters.append("index", offset.toString())
-                parameters.append("sortField", "2")
+                parameters.append("sortField", sortField)
                 if (mcVersion != null) {
                     parameters.append("gameVersion", mcVersion)
                 }

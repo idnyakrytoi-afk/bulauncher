@@ -62,6 +62,7 @@ fun ModBrowserScreen(
     var statusMessage by remember { mutableStateOf("") }
     var showSourceMenu by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var selectedSort by remember { mutableStateOf("relevance") }
 
     val categories = listOf(
         "all" to "\u2605 Все",
@@ -167,10 +168,10 @@ fun ModBrowserScreen(
                                 statusMessage = "Поиск в ${selectedSource.displayName}..."
                                 val results = when (selectedSource) {
                                     ModSource.MODRINTH -> modrinthApi.searchMods(
-                                        searchQuery, mcVersion, loader, category = selectedCategory
+                                        searchQuery, mcVersion, loader, category = selectedCategory, sort = selectedSort
                                     )
                                     ModSource.CURSEFORGE -> curseForgeApi.searchMods(
-                                        searchQuery, mcVersion, loader, category = selectedCategory
+                                        searchQuery, mcVersion, loader, category = selectedCategory, sort = selectedSort
                                     )
                                 }
                                 withContext(Dispatchers.Main) {
@@ -225,7 +226,41 @@ fun ModBrowserScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Сортировка:", fontSize = 12.sp, color = Color(0xFF6E7681))
+            val sortOptions = listOf(
+                "relevance" to "По релевантности",
+                "downloads" to "По популярности",
+                "newest" to "По дате"
+            )
+            for ((sortId, sortLabel) in sortOptions) {
+                val isSelected = selectedSort == sortId
+                Box(
+                    modifier = Modifier
+                        .height(28.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (isSelected) primaryColor.copy(alpha = 0.2f) else Color(0xFF0D1117))
+                        .clickable {
+                            selectedSort = sortId
+                        }
+                        .padding(horizontal = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        sortLabel,
+                        fontSize = 11.sp,
+                        color = if (isSelected) primaryColor else Color(0xFF8B949E)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         if (selectedMod != null) {
             ModDetailPanel(
