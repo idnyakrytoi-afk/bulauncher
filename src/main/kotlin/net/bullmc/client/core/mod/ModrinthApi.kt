@@ -91,13 +91,8 @@ class ModrinthApi {
                 "newest" -> "newest"
                 else -> "relevance"
             }
-            val url = URLBuilder("https://api.modrinth.com/v2/search").apply {
-                parameters.append("query", query)
-                parameters.append("limit", limit.toString())
-                parameters.append("offset", offset.toString())
-                parameters.append("facets", buildFacets(mcVersion, loader, category))
-                parameters.append("index", sortParam)
-            }.buildString()
+            val facets = buildFacets(mcVersion, loader, category)
+            val url = "https://api.modrinth.com/v2/search?query=$query&limit=$limit&offset=$offset&index=$sortParam&facets=${java.net.URLEncoder.encode(facets, "UTF-8")}"
 
             val response = client.get(url)
             val body = response.bodyAsText()

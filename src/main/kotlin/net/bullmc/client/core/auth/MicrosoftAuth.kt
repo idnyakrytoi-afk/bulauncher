@@ -13,6 +13,7 @@ import net.bullmc.client.core.util.LauncherPaths
 
 @Serializable
 data class DeviceCodeResponse(
+    val device_code: String = "",
     val user_code: String = "",
     val verification_uri: String = "",
     val expires_in: Int = 0,
@@ -79,6 +80,7 @@ enum class AuthState {
 }
 
 data class DeviceCodeInfo(
+    val deviceCode: String,
     val userCode: String,
     val verificationUri: String,
     val message: String,
@@ -158,6 +160,7 @@ class MicrosoftAuth {
             }
 
             deviceCode = DeviceCodeInfo(
+                deviceCode = codeResponse.device_code,
                 userCode = codeResponse.user_code,
                 verificationUri = codeResponse.verification_uri,
                 message = codeResponse.message,
@@ -183,7 +186,7 @@ class MicrosoftAuth {
                     formParameters = parameters {
                         append("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
                         append("client_id", CLIENT_ID)
-                        append("device_code", code.userCode)
+                        append("device_code", code.deviceCode)
                     }
                 )
 
