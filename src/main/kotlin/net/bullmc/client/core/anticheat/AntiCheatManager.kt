@@ -141,7 +141,44 @@ class AntiCheatManager(
             }
         }
 
+        if (!verifyAgentIntegrity(agentJar)) {
+            println("[ANTICHEAT-TAMPER] Agent JAR повреждён! Переизвлечение...")
+            ensureAgentExtracted()
+            if (!verifyAgentIntegrity(agentJar)) {
+                println("[ANTICHEAT-TAMPER] Agent JAR невозможно восстановить!")
+                return null
+            }
+        }
+
         return "-javaagent:${agentJar.absolutePath}"
+    }
+
+    private fun verifyAgentIntegrity(agentJar: File): Boolean {
+        if (!agentJar.exists() || agentJar.length() == 0L) return false
+
+        return try {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            agentJar.inputStream().use { input ->
+                val buffer = ByteArray(8192)
+                var read: Int
+                while (input.read(buffer).also { read = it } != -1) {
+                    digest.update(buffer, 0, read)
+                }
+            }
+            val hash = digest.digest().joinToString("") { "%02x".format(it) }
+            val size = agentJar.length()
+
+            if (hash == AGENT_JAR_HASH || AGENT_JAR_HASH.isEmpty()) {
+                println("[ANTICHEAT-TAMPER] Agent integrity OK (hash: ${hash.take(16)}..., size: $size)")
+                true
+            } else {
+                println("[ANTICHEAT-TAMPER] Agent hash mismatch! Expected: ${AGENT_JAR_HASH.take(16)}... Got: ${hash.take(16)}...")
+                false
+            }
+        } catch (e: Exception) {
+            println("[ANTICHEAT-TAMPER] Integrity check failed: ${e.message}")
+            false
+        }
     }
 
     fun ensureAgentExtracted(): Boolean {
@@ -226,6 +263,10 @@ class AntiCheatManager(
     fun close() {
         stopRuntimeMonitoring()
         reporter.close()
+    }
+
+    companion object {
+        private const val AGENT_JAR_HASH = ""
     }
 }
 

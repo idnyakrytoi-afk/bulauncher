@@ -39,7 +39,9 @@ fun TopBanner(
     onVersionSelected: (String) -> Unit,
     onLaunch: (String) -> Unit,
     activeProfileName: String = "",
-    selectedLoader: LoaderType = LoaderType.VANILLA
+    selectedLoader: LoaderType = LoaderType.VANILLA,
+    anticheatStatus: String = "",
+    anticheatThreatLevel: String = ""
 ) {
     val nick = remember { mutableStateOf(savedNick) }
     val shape = RoundedCornerShape(16.dp)
@@ -116,6 +118,22 @@ fun TopBanner(
                             fontSize = 14.sp,
                             color = Color(0xFF8B949E)
                         )
+                    }
+                }
+
+                if (anticheatStatus.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val shieldColor = when (anticheatThreatLevel) {
+                            "CLEAN" -> Color(0xFF34D399)
+                            "LOW" -> Color(0xFF34D399)
+                            "MEDIUM" -> Color(0xFFFBBF24)
+                            "HIGH", "CRITICAL" -> Color(0xFFF87171)
+                            else -> Color(0xFF8B949E)
+                        }
+                        Text("\uD83D\uDEE1", fontSize = 12.sp, color = shieldColor)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(anticheatStatus, fontSize = 12.sp, color = Color(0xFF8B949E))
                     }
                 }
 
