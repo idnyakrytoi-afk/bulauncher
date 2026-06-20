@@ -356,7 +356,13 @@ fun main() = application {
                                 },
                                 onVersionSelected = { ver ->
                                     selectedVersion = ver
-                                    ProfileManager.updateProfile(activeProfile.id) { mcVersion = ver }
+                                    val newName = "${selectedLoader.displayName} $ver"
+                                    ProfileManager.updateProfile(activeProfile.id) {
+                                        mcVersion = ver
+                                        name = newName
+                                    }
+                                    activeProfile = ProfileManager.getActiveProfile()
+                                    profiles = ProfileManager.getProfiles()
                                 },
                                 activeProfileName = activeProfile.name,
                                 selectedLoader = selectedLoader,
@@ -426,7 +432,13 @@ fun main() = application {
                                 selectedLoader = selectedLoader,
                                 onLoaderChanged = { loader ->
                                     selectedLoader = loader
-                                    ProfileManager.updateProfile(activeProfile.id) { loaderType = loader }
+                                    val newName = "${loader.displayName} $selectedVersion"
+                                    ProfileManager.updateProfile(activeProfile.id) {
+                                        loaderType = loader
+                                        name = newName
+                                    }
+                                    activeProfile = ProfileManager.getActiveProfile()
+                                    profiles = ProfileManager.getProfiles()
                                 },
                                 selectedLoaderVersion = selectedLoaderVersion,
                                 onLoaderVersionChanged = { ver ->
@@ -525,7 +537,12 @@ fun main() = application {
                         }
 
                         "SERVERS" -> {
-                            var savedServerList by remember { mutableStateOf(auth.getSavedServers()) }
+                            val defaultServers = listOf("play.bullmc.net", "yt.bullmc.net")
+                            var savedServerList by remember {
+                                val loaded = auth.getSavedServers().ifEmpty { defaultServers }
+                                if (loaded != auth.getSavedServers()) auth.saveServers(loaded)
+                                mutableStateOf(loaded)
+                            }
                             ServerBrowserScreen(
                                 primaryColor = ThemeManager.getPrimaryColor(currentTheme),
                                 savedServers = savedServerList,

@@ -3,6 +3,7 @@ package net.bullmc.client.core.launcher
 import net.bullmc.client.core.auth.Auth
 import kotlinx.serialization.json.*
 import java.io.File
+import java.net.URL
 
 class MinecraftLauncher(
     private val gameDir: File,
@@ -19,7 +20,8 @@ class MinecraftLauncher(
         javaPath: String = "java",
         ramMb: Int = 4096,
         serverIp: String? = null,
-        serverPort: Int = 25565
+        serverPort: Int = 25565,
+        extraJvmArgs: List<String> = emptyList()
     ): Process? {
         return try {
             auth.savePlayerNick(playerNick)
@@ -44,7 +46,6 @@ class MinecraftLauncher(
 
                 if (parentJsonFile.exists()) {
                     parentJson = Json.parseToJsonElement(parentJsonFile.readText()).jsonObject
-                    println("[LAUNCH] InheritsFrom: $inheritsFrom")
                 }
 
                 if (!clientJar.exists() && parentJarFile.exists()) {
@@ -65,10 +66,25 @@ class MinecraftLauncher(
             val nativesDir = findOrExtractNatives(version)
 
             val ramMB = ramMb.coerceIn(1024, 16384)
-            val xmx = "${ramMB}M"
-            val xms = "${(ramMB / 2).coerceAtLeast(512)}M"
+            
+            val offlineUuid = java.util.UUID.nameUUIDFromBytes("OfflinePlayer:$playerNick".toByteArray()).toString()
+
+            val fakeToken = java.util.UUID.nameUUIDFromBytes("AccessToken:$playerNick".toByteArray()).toString()
 
             val replacements = mapOf(
+                "auth_player_name" to playerNick,
+                "version_name" to version,
+                "game_directory" to gameDir.absolutePath,
+                "assets_root" to assetsDir.absolutePath,
+                "assets_index_name" to (rawJson["assets"]?.jsonPrimitive?.content ?: parentJson?.get("assets")?.jsonPrimitive?.content ?: "1.21"),
+                "auth_uuid" to offlineUuid,
+                "auth_access_token" to fakeToken,
+                "clientid" to offlineUuid,
+                "auth_xuid" to "0",
+                "user_type" to "legacy",
+                "version_type" to "release",
+                "resolution_width" to "854",
+                "resolution_height" to "480",
                 "natives_directory" to (nativesDir ?: ""),
                 "launcher_name" to "BullMC",
                 "launcher_version" to "1.0"
@@ -76,107 +92,156 @@ class MinecraftLauncher(
 
             val jvmArgs = mutableListOf<String>()
             jvmArgs.add(javaPath)
-            jvmArgs.addAll(listOf("-Xmx$xmx", "-Xms$xms"))
+            jvmArgs.add("-Xmx${ramMB}M")
+            jvmArgs.add("-Xms${(ramMB / 2).coerceAtLeast(512)}M")
 
+            // Парсинг аргументов JVM
             val allJvmArgs = mutableListOf<JsonElement>()
-            rawJson["arguments"]?.jsonObject?.get("jvm")?.let { if (it is JsonArray) allJvmArgs.addAll(it) }
             parentJson?.get("arguments")?.jsonObject?.get("jvm")?.let { if (it is JsonArray) allJvmArgs.addAll(it) }
+            rawJson["arguments"]?.jsonObject?.get("jvm")?.let { if (it is JsonArray) allJvmArgs.addAll(it) }
 
-            var skipNext = false
+            var skipNextJvm = false
             for (element in allJvmArgs) {
-                if (skipNext) {
-                    skipNext = false
-                    continue
-                }
+                if (skipNextJvm) { skipNextJvm = false; continue }
                 when (element) {
-                        is JsonPrimitive -> {
-                            val content = element.content
-                            if (content == "-cp" || content == "\${classpath}") {
-                                if (content == "-cp") skipNext = true
-                                continue
-                            }
-                            jvmArgs.add(resolvePlaceholders(content, replacements))
+                    is JsonPrimitive -> {
+                        val content = element.content
+                        if (content == "-cp" || content == "\${classpath}") {
+                            if (content == "-cp") skipNextJvm = true
+                            continue
                         }
-                        is JsonObject -> {
-                            if (!rulesMatch(element)) continue
-                            val value = element["value"]
-                            when (value) {
-                                is JsonPrimitive -> {
-                                    val content = value.content
-                                    if (content == "-cp" || content == "\${classpath}") {
-                                        if (content == "-cp") skipNext = true
-                                        continue
-                                    }
-                                    jvmArgs.add(resolvePlaceholders(content, replacements))
+                        jvmArgs.add(resolvePlaceholders(content, replacements))
+                    }
+                    is JsonObject -> {
+                        if (!rulesMatch(element)) continue
+                        val value = element["value"]
+                        when (value) {
+                            is JsonPrimitive -> {
+                                val content = value.content
+                                if (content == "-cp" || content == "\${classpath}") {
+                                    if (content == "-cp") skipNextJvm = true
+                                    continue
                                 }
-                                is JsonArray -> {
-                                    var innerSkip = false
-                                    for (v in value) {
-                                        if (innerSkip) {
-                                            innerSkip = false
+                                jvmArgs.add(resolvePlaceholders(content, replacements))
+                            }
+                            is JsonArray -> {
+                                var innerSkip = false
+                                for (v in value) {
+                                    if (innerSkip) { innerSkip = false; continue }
+                                    if (v is JsonPrimitive) {
+                                        val content = v.content
+                                        if (content == "-cp" || content == "\${classpath}") {
+                                            if (content == "-cp") innerSkip = true
                                             continue
                                         }
-                                        if (v is JsonPrimitive) {
-                                            val content = v.content
-                                            if (content == "-cp" || content == "\${classpath}") {
-                                                if (content == "-cp") innerSkip = true
-                                                continue
-                                            }
-                                            jvmArgs.add(resolvePlaceholders(content, replacements))
-                                        }
+                                        jvmArgs.add(resolvePlaceholders(content, replacements))
                                     }
                                 }
-                                else -> {}
                             }
+                            else -> {} // Добавлено для компилятора
                         }
-                        else -> {}
                     }
+                    else -> {} // Добавлено для компилятора
                 }
+            }
 
             val tempDir = System.getProperty("java.io.tmpdir") ?: System.getenv("TEMP") ?: gameDir.absolutePath
             jvmArgs.add("-Djava.io.tmpdir=$tempDir")
 
             if (nativesDir == null) {
-                jvmArgs.removeAll { it.startsWith("-Djava.library.path=") ||
-                    it.startsWith("-Djna.tmpdir=") ||
-                    it.startsWith("-Dorg.lwjgl.system.SharedLibraryExtractPath=") ||
-                    it.startsWith("-Dio.netty.native.workdir=") }
+                jvmArgs.removeAll { it.startsWith("-Djava.library.path=") || it.startsWith("-Djna.tmpdir=") || it.startsWith("-Dorg.lwjgl.system.SharedLibraryExtractPath=") || it.startsWith("-Dio.netty.native.workdir=") }
+            }
+
+            for (extraArg in extraJvmArgs) {
+                jvmArgs.add(extraArg)
             }
 
             jvmArgs.addAll(listOf("-cp", classpath))
 
-            val gameArgs = mutableListOf(
-                "--username=$playerNick",
-                "--version=$version",
-                "--gameDir=${gameDir.absolutePath}",
-                "--assetsDir=${assetsDir.absolutePath}",
-                "--accessToken=0",
-                "--uuid=${java.util.UUID.randomUUID().toString().replace("-", "")}",
-                "--userType=offline",
-                "--userProperties={}"
-            )
+            // Парсинг аргументов ИГРЫ
+            val rawGameArgs = mutableListOf<String>()
+            val allGameArgs = mutableListOf<JsonElement>()
+            parentJson?.get("arguments")?.jsonObject?.get("game")?.let { if (it is JsonArray) allGameArgs.addAll(it) }
+            rawJson["arguments"]?.jsonObject?.get("game")?.let { if (it is JsonArray) allGameArgs.addAll(it) }
 
-            val assetIndex = rawJson["assets"]?.jsonPrimitive?.content
-            if (assetIndex != null) {
-                gameArgs.add(3, "--assetIndex=$assetIndex")
+            if (allGameArgs.isEmpty()) {
+                 val mcArgs = rawJson["minecraftArguments"]?.jsonPrimitive?.content ?: parentJson?.get("minecraftArguments")?.jsonPrimitive?.content
+                 if (mcArgs != null) {
+                     rawGameArgs.addAll(mcArgs.split(" ").map { resolvePlaceholders(it, replacements) })
+                 } else {
+                     // Страховочный вариант для старых версий
+                     rawGameArgs.addAll(listOf(
+                         "--username", playerNick, "--version", version,
+                         "--gameDir", gameDir.absolutePath, "--assetsDir", assetsDir.absolutePath,
+                         "--assetIndex", (rawJson["assets"]?.jsonPrimitive?.content ?: "1.21"),
+                          "--uuid", replacements["auth_uuid"]!!, "--accessToken", fakeToken,
+                          "--userType", "legacy", "--versionType", "release"
+                     ))
+                 }
+            } else {
+                for (element in allGameArgs) {
+                    when (element) {
+                        is JsonPrimitive -> rawGameArgs.add(resolvePlaceholders(element.content, replacements))
+                        is JsonObject -> {
+                            if (!rulesMatch(element)) continue
+                            val value = element["value"]
+                            when (value) {
+                                is JsonPrimitive -> rawGameArgs.add(resolvePlaceholders(value.content, replacements))
+                                is JsonArray -> {
+                                    for (v in value) {
+                                        if (v is JsonPrimitive) rawGameArgs.add(resolvePlaceholders(v.content, replacements))
+                                    }
+                                }
+                                else -> {} // Добавлено для компилятора
+                            }
+                        }
+                        else -> {} // Добавлено для компилятора
+                    }
+                }
             }
 
             if (serverIp != null) {
-                gameArgs.add("--server=$serverIp")
-                gameArgs.add("--port=$serverPort")
+                rawGameArgs.add("--server")
+                rawGameArgs.add(serverIp)
+                rawGameArgs.add("--port")
+                rawGameArgs.add(serverPort.toString())
             }
 
-            val allArgs = jvmArgs + listOf(mainClass) + gameArgs
+            rawGameArgs.removeAll { it == "--demo" }
 
-            println("[LAUNCH] Command (${allArgs.size} args):")
-            println("[LAUNCH] ${allArgs.joinToString(" ")}")
+            // УМНОЕ УДАЛЕНИЕ ДУБЛИКАТОВ АРГУМЕНТОВ
+            val finalGameArgs = mutableListOf<String>()
+            var i = 0
+            while (i < rawGameArgs.size) {
+                val arg = rawGameArgs[i]
+                if (arg.startsWith("--")) {
+                    val existingIndex = finalGameArgs.indexOf(arg)
+                    if (existingIndex != -1) {
+                        // Если аргумент уже есть, обновляем его значение
+                        if (i + 1 < rawGameArgs.size && !rawGameArgs[i + 1].startsWith("--")) {
+                            if (existingIndex + 1 < finalGameArgs.size && !finalGameArgs[existingIndex + 1].startsWith("--")) {
+                                finalGameArgs[existingIndex + 1] = rawGameArgs[i + 1]
+                            } else {
+                                finalGameArgs.add(existingIndex + 1, rawGameArgs[i + 1])
+                            }
+                            i += 2
+                        } else {
+                            i += 1
+                        }
+                        continue
+                    }
+                }
+                finalGameArgs.add(arg)
+                i++
+            }
+
+            val allArgs = jvmArgs + listOf(mainClass) + finalGameArgs
 
             val processBuilder = ProcessBuilder(allArgs)
             processBuilder.directory(gameDir)
             processBuilder.redirectErrorStream(true)
             processBuilder.start()
         } catch (e: Exception) {
-            println("[LAUNCH] Ошибка: ${e.message}")
             e.printStackTrace()
             null
         }
@@ -249,7 +314,6 @@ class MinecraftLauncher(
                 val jarFile = File(librariesDir, path)
                 if (!jarFile.exists()) continue
 
-                println("[LAUNCH] Extracting natives from: $path")
                 try {
                     java.util.zip.ZipFile(jarFile).use { zip ->
                         zip.entries().asSequence().forEach { entry ->
@@ -264,9 +328,7 @@ class MinecraftLauncher(
                             }
                         }
                     }
-                } catch (e: Exception) {
-                    println("[LAUNCH] Error extracting natives from $path: ${e.message}")
-                }
+                } catch (e: Exception) {}
             }
         }
 
@@ -278,73 +340,103 @@ class MinecraftLauncher(
     }
 
     private fun buildClasspath(version: String, inheritsFrom: String? = null): String {
-        val jars = mutableListOf<String>()
-
-        val versionDir = File(versionsDir, version)
-        val clientJar = File(versionDir, "$version.jar")
-        if (clientJar.exists()) jars.add(clientJar.absolutePath)
-
-        val allLibraries = mutableListOf<Pair<String, JsonObject>>()
-
-        val versionJsonFile = File(versionsDir, "$version/$version.json")
-        if (versionJsonFile.exists()) {
-            val rawJson = Json.parseToJsonElement(versionJsonFile.readText()).jsonObject
-            val libraries = rawJson["libraries"] as? JsonArray
-            if (libraries != null) {
-                for (el in libraries) {
-                    val obj = el as? JsonObject ?: continue
-                    val name = obj["name"]?.jsonPrimitive?.content ?: continue
-                    allLibraries.add(name to obj)
-                }
-            }
-        }
+        val classpathList = mutableListOf<String>()
 
         if (inheritsFrom != null) {
-            val parentJsonFile = File(versionsDir, "$inheritsFrom/$inheritsFrom.json")
-            if (parentJsonFile.exists()) {
-                val parentJson = Json.parseToJsonElement(parentJsonFile.readText()).jsonObject
-                val parentLibs = parentJson["libraries"] as? JsonArray
-                if (parentLibs != null) {
-                    for (el in parentLibs) {
-                        val obj = el as? JsonObject ?: continue
-                        val name = obj["name"]?.jsonPrimitive?.content ?: continue
-                        allLibraries.add(name to obj)
+            val parentJar = File(versionsDir, "$inheritsFrom/$inheritsFrom.jar")
+            if (parentJar.exists()) classpathList.add(parentJar.absolutePath)
+        }
+        val childJar = File(versionsDir, "$version/$version.jar")
+        if (childJar.exists()) classpathList.add(childJar.absolutePath)
+
+        if (inheritsFrom != null) {
+            val vanillaJsonFile = File(versionsDir, "$inheritsFrom/$inheritsFrom.json")
+            if (vanillaJsonFile.exists()) {
+                val vanillaJson = Json.parseToJsonElement(vanillaJsonFile.readText()).jsonObject
+                val vanillaLibs = vanillaJson["libraries"] as? JsonArray ?: JsonArray(emptyList())
+                for (el in vanillaLibs) {
+                    val obj = el as? JsonObject ?: continue
+                    if (!rulesMatchLibrary(obj)) continue
+                    val libPath = resolveLibPath(obj) ?: continue
+                    val jarFile = File(librariesDir, libPath)
+
+                    if (!jarFile.exists()) {
+                        val url = obj["downloads"]?.jsonObject?.get("artifact")?.jsonObject?.get("url")?.jsonPrimitive?.content
+                        val dlUrl = url ?: "https://libraries.minecraft.net/$libPath"
+                        try {
+                            jarFile.parentFile?.mkdirs()
+                            URL(dlUrl).openStream().use { input ->
+                                jarFile.outputStream().use { output -> input.copyTo(output) }
+                            }
+                        } catch (e: Exception) {}
+                    }
+                    if (jarFile.exists()) classpathList.add(jarFile.absolutePath)
+                }
+            }
+        }
+
+        val loaderJsonFile = File(versionsDir, "$version/$version.json")
+        if (loaderJsonFile.exists()) {
+            val loaderJson = Json.parseToJsonElement(loaderJsonFile.readText()).jsonObject
+            val loaderLibs = loaderJson["libraries"] as? JsonArray ?: JsonArray(emptyList())
+            for (el in loaderLibs) {
+                val obj = el as? JsonObject ?: continue
+                if (!rulesMatchLibrary(obj)) continue
+                val libPath = resolveLibPath(obj) ?: continue
+                val jarFile = File(librariesDir, libPath)
+
+                if (!jarFile.exists()) {
+                    val baseUrl = obj["url"]?.jsonPrimitive?.content ?: "https://maven.fabricmc.net/"
+                    val cleanUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+                    try {
+                        jarFile.parentFile?.mkdirs()
+                        URL("$cleanUrl$libPath").openStream().use { input ->
+                            jarFile.outputStream().use { output -> input.copyTo(output) }
+                        }
+                    } catch (e: Exception) {
+                        try {
+                            URL("https://repo1.maven.org/maven2/$libPath").openStream().use { input ->
+                                jarFile.outputStream().use { output -> input.copyTo(output) }
+                            }
+                        } catch (e2: Exception) {}
                     }
                 }
-
-                val parentJar = File(versionsDir, "$inheritsFrom/$inheritsFrom.jar")
-                if (parentJar.exists() && !jars.contains(parentJar.absolutePath)) {
-                    jars.add(0, parentJar.absolutePath)
-                }
+                if (jarFile.exists()) classpathList.add(jarFile.absolutePath)
             }
         }
 
-        val deduped = linkedMapOf<String, JsonObject>()
-        for ((name, lib) in allLibraries) {
-            val parts = name.split(":")
-            if (parts.size >= 3) {
-                val artifactKey = "${parts[0]}:${parts[1]}"
-                deduped[artifactKey] = lib
-            }
-        }
+        val finalClasspath = mutableListOf<String>()
+        val libraryMap = mutableMapOf<String, String>()
 
-        for ((_, lib) in deduped) {
-            if (!rulesMatchLibrary(lib)) continue
-            val path = resolveLibraryPath(lib)
-            if (path != null) {
-                val file = File(librariesDir, path)
-                if (file.exists()) {
-                    jars.add(file.absolutePath)
+        for (path in classpathList) {
+            val file = File(path)
+            if (!file.exists()) continue
+
+            if (path.replace("\\", "/").contains("/libraries/")) {
+                val ver = file.parentFile.name
+                val artifactDir = file.parentFile.parentFile.absolutePath
+                val suffix = file.name.substringAfter(ver, "")
+                val uniqueKey = "$artifactDir|$suffix"
+
+                val existingPath = libraryMap[uniqueKey]
+                if (existingPath != null) {
+                    val existingVer = File(existingPath).parentFile.name
+                    val scoreOld = existingVer.replace(Regex("[^0-9]"), "").toLongOrNull() ?: 0L
+                    val scoreNew = ver.replace(Regex("[^0-9]"), "").toLongOrNull() ?: 0L
+                    if (scoreNew >= scoreOld) libraryMap[uniqueKey] = path
                 } else {
-                    println("[LAUNCH] Missing library: $path")
+                    libraryMap[uniqueKey] = path
                 }
+            } else {
+                if (!finalClasspath.contains(path)) finalClasspath.add(path)
             }
         }
 
-        return jars.joinToString(File.pathSeparator)
+        finalClasspath.addAll(libraryMap.values)
+        return finalClasspath.joinToString(File.pathSeparator)
     }
 
-    private fun resolveLibraryPath(lib: JsonObject): String? {
+    private fun resolveLibPath(lib: JsonObject): String? {
         val downloads = lib["downloads"] as? JsonObject
         val artifact = downloads?.get("artifact") as? JsonObject
         val downloadPath = artifact?.get("path")?.jsonPrimitive?.content

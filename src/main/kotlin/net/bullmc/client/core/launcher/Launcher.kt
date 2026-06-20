@@ -1,5 +1,6 @@
 package net.bullmc.client.core.launcher
 
+import net.bullmc.client.core.anticheat.AntiCheatManager
 import net.bullmc.client.core.auth.Auth
 import net.bullmc.client.core.loader.LoaderManager
 import net.bullmc.client.core.loader.LoaderType
@@ -22,10 +23,33 @@ class Launcher {
         loaderVersion: String = "",
         enabledModIds: List<String> = emptyList(),
         gameDir: File,
-        onStatus: (String, Float) -> Unit
+        onStatus: (String, Float) -> Unit,
+        antiCheatEnabled: Boolean = true
     ): Process? {
         LauncherPaths.init()
         onStatus("Подготовка...", 0f)
+
+        val modsDir = File(gameDir, "mods").also { it.mkdirs() }
+        val antiCheat = AntiCheatManager(modsDir, gameDir)
+        antiCheat.enabled = antiCheatEnabled
+
+        onStatus("Проверка на читы...", 0.05f)
+        val checkResult = antiCheat.checkBeforeLaunch(playerNick)
+        if (!checkResult.allowed) {
+            val msg = buildString {
+                appendLine("=== ОБНАРУЖЕНЫ ЧИТЫ ===")
+                appendLine(checkResult.message)
+                appendLine()
+                for (v in checkResult.violations) {
+                    appendLine("[${v.violationType}] ${v.details}")
+                }
+                appendLine()
+                appendLine("Запуск заблокирован. Удалите запрещённые моды.")
+            }
+            println(msg)
+            onStatus(checkResult.message, 0f)
+            return null
+        }
 
         val mcLauncher = MinecraftLauncher(gameDir, auth)
 
@@ -43,7 +67,8 @@ class Launcher {
             )
 
             onStatus("Запуск Minecraft...", 1.0f)
-            mcLauncher.launch(actualVersionId, playerNick, javaPath, ramMb, serverIp)
+            val agentArg = antiCheat.buildAgentJvmArg()
+            mcLauncher.launch(actualVersionId, playerNick, javaPath, ramMb, serverIp, extraJvmArgs = listOfNotNull(agentArg))
         } catch (e: Exception) {
             println("[LAUNCH] Ошибка: ${e.message}")
             e.printStackTrace()
