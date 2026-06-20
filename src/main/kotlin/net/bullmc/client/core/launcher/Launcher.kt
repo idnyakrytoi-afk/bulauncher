@@ -24,7 +24,7 @@ class Launcher {
         enabledModIds: List<String> = emptyList(),
         gameDir: File,
         onStatus: (String, Float) -> Unit,
-        antiCheatEnabled: Boolean = true
+        antiCheatEnabled: Boolean = false
     ): Process? {
         LauncherPaths.init()
         onStatus("Подготовка...", 0f)
