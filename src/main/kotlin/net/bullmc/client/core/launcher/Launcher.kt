@@ -33,20 +33,8 @@ class Launcher {
         val antiCheat = AntiCheatManager(modsDir, gameDir)
         antiCheat.enabled = antiCheatEnabled
 
-        onStatus("Проверка на читы...", 0.05f)
         val checkResult = antiCheat.checkBeforeLaunch(playerNick)
         if (!checkResult.allowed) {
-            val msg = buildString {
-                appendLine("=== ОБНАРУЖЕНЫ ЧИТЫ ===")
-                appendLine(checkResult.message)
-                appendLine()
-                for (v in checkResult.violations) {
-                    appendLine("[${v.violationType}] ${v.details}")
-                }
-                appendLine()
-                appendLine("Запуск заблокирован. Удалите запрещённые моды.")
-            }
-            println(msg)
             onStatus(checkResult.message, 0f)
             return null
         }
@@ -66,12 +54,10 @@ class Launcher {
                 version, loader, loaderVersion, enabledModIds
             )
 
-            onStatus("Запуск Minecraft...", 1.0f)
+            onStatus("Запуск...", 1.0f)
             val agentArg = antiCheat.buildAgentJvmArg()
             mcLauncher.launch(actualVersionId, playerNick, javaPath, ramMb, serverIp, extraJvmArgs = listOfNotNull(agentArg))
         } catch (e: Exception) {
-            println("[LAUNCH] Ошибка: ${e.message}")
-            e.printStackTrace()
             LauncherPaths.writeErrorLog(e)
             onStatus("Ошибка: ${e.message}", 0f)
             null

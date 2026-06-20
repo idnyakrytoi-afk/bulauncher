@@ -30,7 +30,6 @@ class MinecraftLauncher(
             val versionJsonFile = File(versionDir, "$version.json")
 
             if (!versionJsonFile.exists()) {
-                println("[LAUNCH] Файлы версии $version не найдены")
                 return null
             }
 
@@ -54,7 +53,6 @@ class MinecraftLauncher(
             }
 
             if (!clientJar.exists()) {
-                println("[LAUNCH] Client jar не найден: ${clientJar.absolutePath}")
                 return null
             }
 
@@ -116,8 +114,6 @@ class MinecraftLauncher(
                         val resolved = resolvePlaceholders(content, replacements)
                         if (!isSuspiciousJvmArg(resolved)) {
                             jvmArgs.add(resolved)
-                        } else {
-                            println("[LAUNCH] Заблокирован подозрительный JVM аргумент из version.json: $resolved")
                         }
                     }
                     is JsonObject -> {
@@ -133,8 +129,6 @@ class MinecraftLauncher(
                                 val resolved = resolvePlaceholders(content, replacements)
                                 if (!isSuspiciousJvmArg(resolved)) {
                                     jvmArgs.add(resolved)
-                                } else {
-                                    println("[LAUNCH] Заблокирован подозрительный JVM аргумент из version.json: $resolved")
                                 }
                             }
                             is JsonArray -> {
@@ -171,8 +165,6 @@ class MinecraftLauncher(
             for (extraArg in extraJvmArgs) {
                 if (!isSuspiciousJvmArg(extraArg)) {
                     jvmArgs.add(extraArg)
-                } else {
-                    println("[LAUNCH] Заблокирован подозрительный extra JVM аргумент: $extraArg")
                 }
             }
 

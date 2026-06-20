@@ -124,12 +124,6 @@ fun main() = application {
     var progress by remember { mutableStateOf(0f) }
     var news by remember { mutableStateOf(listOf<NewsItem>()) }
 
-    var anticheatStatusText by remember { mutableStateOf("") }
-    var anticheatThreatLevel by remember { mutableStateOf("CLEAN") }
-    var anticheatScanned by remember { mutableStateOf(false) }
-    var anticheatClean by remember { mutableStateOf(true) }
-    var anticheatViolations by remember { mutableStateOf(0) }
-
     var selectedVersion by remember { mutableStateOf("1.20.4") }
     var availableVersions by remember { mutableStateOf(listOf("1.20.4")) }
 
@@ -392,8 +386,6 @@ fun main() = application {
                                 },
                                 activeProfileName = activeProfile.name,
                                 selectedLoader = selectedLoader,
-                                anticheatStatus = anticheatStatusText,
-                                anticheatThreatLevel = anticheatThreatLevel,
                                 onLaunch = { nick ->
                                     savedNick = nick
                                     auth.savePlayerNick(nick)
@@ -429,21 +421,6 @@ fun main() = application {
                                                     statusMessage = msg
                                                     progress = prog
                                                     if (msg.isNotEmpty()) logLines = logLines + "[LAUNCHER] $msg"
-                                                    if (msg.contains("Проверка пройдена") || msg.contains("Античит отключён")) {
-                                                        anticheatScanned = true
-                                                        anticheatClean = true
-                                                        anticheatStatusText = "Чисто"
-                                                        anticheatThreatLevel = "CLEAN"
-                                                    } else if (msg.contains("обнаружены") || msg.contains("Нарушения")) {
-                                                        anticheatScanned = true
-                                                        anticheatClean = false
-                                                        anticheatStatusText = "Нарушения"
-                                                    } else if (msg.contains("AI-детект")) {
-                                                        anticheatScanned = true
-                                                        anticheatStatusText = "AI: $msg"
-                                                    } else if (msg.contains("Проверка на читы")) {
-                                                        anticheatStatusText = "Проверка..."
-                                                    }
                                                 }
                                             )
                                             if (process != null) {
@@ -467,12 +444,7 @@ fun main() = application {
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            BottomCards(news = news, serverStatuses = serverStatuses, primaryColor = ThemeManager.getPrimaryColor(currentTheme),
-                                anticheatScanned = anticheatScanned,
-                                anticheatClean = anticheatClean,
-                                anticheatViolations = anticheatViolations,
-                                anticheatThreatLevel = anticheatThreatLevel
-                            )
+                            BottomCards(news = news, serverStatuses = serverStatuses, primaryColor = ThemeManager.getPrimaryColor(currentTheme))
                         }
 
                         "MODS" -> {

@@ -23,11 +23,7 @@ import net.bullmc.client.api.ServerStatus
 fun BottomCards(
     news: List<NewsItem>,
     serverStatuses: Map<String, ServerStatus>,
-    primaryColor: Color,
-    anticheatScanned: Boolean = false,
-    anticheatClean: Boolean = true,
-    anticheatViolations: Int = 0,
-    anticheatThreatLevel: String = "CLEAN"
+    primaryColor: Color
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().height(200.dp),
@@ -35,73 +31,11 @@ fun BottomCards(
     ) {
         NewsCard(modifier = Modifier.weight(1.2f), news = news, primaryColor = primaryColor)
 
-        AnticheatCard(
-            modifier = Modifier.weight(1f),
-            scanned = anticheatScanned,
-            clean = anticheatClean,
-            violations = anticheatViolations,
-            threatLevel = anticheatThreatLevel,
-            primaryColor = primaryColor
-        )
-
         val mainStatus = serverStatuses["play.bullmc.net"]
         val ytStatus = serverStatuses["yt.bullmc.net"]
 
         ServerCard(modifier = Modifier.weight(1f), label = "Survival", ip = "play.bullmc.net", status = mainStatus)
         ServerCard(modifier = Modifier.weight(1f), label = "Creative", ip = "yt.bullmc.net", status = ytStatus)
-    }
-}
-
-@Composable
-private fun AnticheatCard(
-    modifier: Modifier = Modifier,
-    scanned: Boolean,
-    clean: Boolean,
-    violations: Int,
-    threatLevel: String,
-    primaryColor: Color
-) {
-    val cardShape = RoundedCornerShape(12.dp)
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(cardShape)
-            .shadow(4.dp, cardShape)
-            .background(if (isHovered) Color(0xFF1C2028) else Color(0xFF161B22))
-            .clickable(interactionSource = interactionSource, indication = null) { }
-            .padding(16.dp)
-    ) {
-        Column {
-            val statusColor = when {
-                !scanned -> Color(0xFF8B949E)
-                clean -> Color(0xFF34D399)
-                threatLevel == "CRITICAL" || threatLevel == "HIGH" -> Color(0xFFF87171)
-                else -> Color(0xFFFBBF24)
-            }
-            Text("\uD83D\uDEE1", fontSize = 16.sp, color = statusColor)
-            Spacer(modifier = Modifier.height(10.dp))
-            Text("AntiCheat", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (!scanned) {
-                Text("Ожидание проверки", fontSize = 14.sp, color = Color(0xFF8B949E))
-            } else if (clean) {
-                StatRow("Статус", "Чисто")
-                Spacer(modifier = Modifier.height(4.dp))
-                StatRow("Моды", "Проверены")
-                Spacer(modifier = Modifier.height(4.dp))
-                Text("Все модификации прошли проверку", fontSize = 12.sp, color = Color(0xFF34D399))
-            } else {
-                StatRow("Статус", "Нарушения")
-                Spacer(modifier = Modifier.height(4.dp))
-                StatRow("Найдено", "$violations")
-                Spacer(modifier = Modifier.height(4.dp))
-                StatRow("Уровень", threatLevel)
-            }
-        }
     }
 }
 

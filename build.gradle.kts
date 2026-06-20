@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "net.bullmc"
-version = "1.0-SNAPSHOT"
+version = "0.1.1"
 
 repositories {
     mavenCentral()
@@ -37,7 +37,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(org.jetbrains.compose.desktop.application.dsl.TargetFormat.Exe)
             packageName = "BullMCClient"
-            packageVersion = "1.0.0"
+            packageVersion = "0.1.1"
         }
     }
 }
