@@ -35,9 +35,9 @@ object CheatDatabase {
     )
 
     val blacklistedModFilePatterns: List<Regex> = listOf(
-        Regex("(?i)^(wurst|impact|baritone|rusherhack|aristois|futureclient|phoenixclient|vape|novoline|huzuni|kiddion|bleachhack|ghostly|liquidbounce|konas|strafe|astolfo|seppuku|halcyon|jello|moonsworth).*\\.jar$"),
-        Regex("(?i)^(killaura|aimbot|autoaim|wallhack|xray|bhop|autoclicker|nofall|scaffold|autocrystal|blink|phase|velocity|hitbox|combo|speed|fly|freecam|noclip|timer|noslow|fastplace|fastbreak|autotool|cheststeal|invsee|esp|tracer|nametag|fullbright).*\\.jar$"),
-        Regex("(?i)^(godmode|exploit|hack|cheat|trigger|aura|reach|mass|brutal|nightx|sensei|aurora|novus|firedump|moondump|hackphoenix|miningplus|killswitch|kamikaze|ragebot|dankpvp|jigsaw|hanabi|drip|wyld).*\\.jar$"),
+        Regex("(?i)^(wurst|impact|baritone|rusherhack|aristois|futureclient|phoenixclient|vape|novoline|huzuni|kiddion|bleachhack|ghostly|liquidbounce|konas|strafe|astolfo|seppuku|halcyon|jello|moonsworth)(?:-|_| ).*\\.jar$"),
+        Regex("(?i)^(killaura|aimbot|autoaim|wallhack|xray|bhop|autoclicker|nofall|scaffold|autocrystal|blink|phase|velocity|hitbox|combo|speed|fly|freecam|noclip|timer|noslow|fastplace|fastbreak|autotool|cheststeal|invsee|esp|tracer|nametag|fullbright)(?:-|_| ).*\\.jar$"),
+        Regex("(?i)^(godmode|exploit|hack|cheat|trigger|aura|reach|mass|brutal|nightx|sensei|aurora|novus|firedump|moondump|hackphoenix|miningplus|killswitch|kamikaze|ragebot|dankpvp|jigsaw|hanabi|drip|wyld)(?:-|_| ).*\\.jar$"),
     )
 
     val blacklistedProcesses: Set<String> = setOf(
@@ -152,7 +152,8 @@ object CheatDatabase {
     fun isModBlacklisted(fileName: String): Boolean {
         val lower = fileName.lowercase().replace(".jar", "")
 
-        if (blacklistedModNames.any { lower.contains(it) }) return true
+        val segments = lower.split("-", "_", " ")
+        if (segments.any { it in blacklistedModNames }) return true
 
         if (blacklistedModFilePatterns.any { it.matches(fileName) }) return true
 
