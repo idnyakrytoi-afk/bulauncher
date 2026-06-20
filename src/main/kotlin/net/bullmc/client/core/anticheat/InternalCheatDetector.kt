@@ -61,8 +61,7 @@ class InternalCheatDetector(
                 for (pid in minecraftPids) {
                     findings.addAll(analyzeProcessModules(pid))
                 }
-            } catch (e: Exception) {
-                println("[AI-DETECT] Ошибка анализа процессов: ${e.message}")
+            } catch (_: Exception) {
             }
         }
 
@@ -117,8 +116,7 @@ class InternalCheatDetector(
                     ))
                 }
             }
-        } catch (e: Exception) {
-            println("[AI-DETECT] Ошибка анализа модулей PID $pid: ${e.message}")
+        } catch (_: Exception) {
         }
 
         return findings

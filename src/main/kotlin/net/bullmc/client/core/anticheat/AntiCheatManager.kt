@@ -35,20 +35,11 @@ class AntiCheatManager(
             )
         }
 
-        println("[ANTICHEAT] Запуск предстартовой проверки для $playerName")
-
         val fullScan = scanner.fullScan(playerName)
         lastScanResult = fullScan
 
-        println("[AI-DETECT] Запуск AI-анализа интернал читов...")
         val internalResult = internalDetector.runFullDetection()
         lastInternalResult = internalResult
-        println("[AI-DETECT] Уровень угрозы: ${internalResult.threatLevel} (score: ${internalResult.totalScore})")
-        if (internalResult.findings.isNotEmpty()) {
-            for (finding in internalResult.findings) {
-                println("  - [${finding.type}] ${finding.description} (score: ${finding.score})")
-            }
-        }
 
         val allViolations = mutableListOf<ViolationReport>()
         allViolations.addAll(fullScan.violations)
@@ -64,11 +55,6 @@ class AntiCheatManager(
         }
 
         if (allViolations.isNotEmpty()) {
-            println("[ANTICHEAT] ОБНАРУЖЕНО ${allViolations.size} НАРУШЕНИЙ:")
-            for (v in allViolations) {
-                println("  - [${v.violationType}] ${v.details}")
-            }
-
             runBlocking {
                 reporter.reportAndBan(playerName, allViolations)
             }
@@ -111,7 +97,6 @@ class AntiCheatManager(
 
         ensureAgentExtracted()
 
-        println("[ANTICHEAT] Проверка пройдена — всё чисто")
         return PreLaunchCheckResult(
             allowed = true,
             message = "Проверка пройдена",
@@ -129,12 +114,10 @@ class AntiCheatManager(
     fun buildAgentJvmArg(): String? {
         val agentJar = getAgentJarPath()
         if (!agentJar.exists()) {
-            println("[ANTICHEAT] Agent JAR не найден: ${agentJar.absolutePath}")
             return null
         }
 
         if (agentJar.length() == 0L) {
-            println("[ANTICHEAT] Agent JAR пустой, попытка переизвлечения...")
             ensureAgentExtracted()
             if (!agentJar.exists() || agentJar.length() == 0L) {
                 return null
@@ -142,10 +125,8 @@ class AntiCheatManager(
         }
 
         if (!verifyAgentIntegrity(agentJar)) {
-            println("[ANTICHEAT-TAMPER] Agent JAR повреждён! Переизвлечение...")
             ensureAgentExtracted()
             if (!verifyAgentIntegrity(agentJar)) {
-                println("[ANTICHEAT-TAMPER] Agent JAR невозможно восстановить!")
                 return null
             }
         }
@@ -166,17 +147,9 @@ class AntiCheatManager(
                 }
             }
             val hash = digest.digest().joinToString("") { "%02x".format(it) }
-            val size = agentJar.length()
 
-            if (hash == AGENT_JAR_HASH || AGENT_JAR_HASH.isEmpty()) {
-                println("[ANTICHEAT-TAMPER] Agent integrity OK (hash: ${hash.take(16)}..., size: $size)")
-                true
-            } else {
-                println("[ANTICHEAT-TAMPER] Agent hash mismatch! Expected: ${AGENT_JAR_HASH.take(16)}... Got: ${hash.take(16)}...")
-                false
-            }
-        } catch (e: Exception) {
-            println("[ANTICHEAT-TAMPER] Integrity check failed: ${e.message}")
+            hash == AGENT_JAR_HASH || AGENT_JAR_HASH.isEmpty()
+        } catch (_: Exception) {
             false
         }
     }
@@ -186,10 +159,7 @@ class AntiCheatManager(
         if (agentJar.exists() && agentJar.length() > 0) return true
 
         val resource = this::class.java.getResourceAsStream("/anticheat-agent/bullmc-anticheat-agent.jar")
-        if (resource == null) {
-            println("[ANTICHEAT] Agent JAR не найден в ресурсах")
-            return false
-        }
+            ?: return false
 
         return try {
             agentJar.parentFile?.mkdirs()
@@ -197,10 +167,8 @@ class AntiCheatManager(
                 resource.copyTo(out)
             }
             resource.close()
-            println("[ANTICHEAT] Agent JAR извлечён: ${agentJar.absolutePath} (${agentJar.length()} байт)")
             agentJar.exists() && agentJar.length() > 0
-        } catch (e: Exception) {
-            println("[ANTICHEAT] Ошибка извлечения agent JAR: ${e.message}")
+        } catch (_: Exception) {
             false
         }
     }
@@ -216,39 +184,18 @@ class AntiCheatManager(
     fun startRuntimeMonitoring(intervalMs: Long = 30_000): Thread {
         runtimeMonitoringActive = true
         val monitorThread = Thread({
-            println("[ANTICHEAT] Рантайм-мониторинг запущен (интервал: ${intervalMs}ms)")
             while (runtimeMonitoringActive) {
                 try {
                     Thread.sleep(intervalMs)
                     if (!runtimeMonitoringActive) break
-
-                    val processResult = scanner.scanProcesses()
-                    if (!processResult.clean) {
-                        println("[ANTICHEAT] [RUNTIME] Обнаружены чит-процессы: ${processResult.foundProcesses}")
-                    }
-
-                    val nativeScan = scanner.scanNativeLibraries()
-                    if (!nativeScan.clean) {
-                        println("[ANTICHEAT] [RUNTIME] Обнаружены подозрительные нативные библиотеки: ${nativeScan.suspiciousLibs}")
-                    }
-
-                    val internalResult = internalDetector.runFullDetection()
-                    if (internalResult.findings.isNotEmpty()) {
-                        println("[AI-DETECT] [RUNTIME] Уровень угрозы: ${internalResult.threatLevel} (score: ${internalResult.totalScore})")
-                        for (finding in internalResult.findings) {
-                            println("  - [${finding.type}] ${finding.description}")
-                        }
-                        if (internalResult.shouldBlock) {
-                            println("[AI-DETECT] [RUNTIME] КРИТИЧЕСКАЯ УГРОЗА — запуск будет заблокирован при следующем запуске")
-                        }
-                    }
-                } catch (e: InterruptedException) {
+                    scanner.scanProcesses()
+                    scanner.scanNativeLibraries()
+                    internalDetector.runFullDetection()
+                } catch (_: InterruptedException) {
                     break
-                } catch (e: Exception) {
-                    println("[ANTICHEAT] [RUNTIME] Ошибка мониторинга: ${e.message}")
+                } catch (_: Exception) {
                 }
             }
-            println("[ANTICHEAT] Рантайм-мониторинг остановлен")
         }, "AntiCheat-RuntimeMonitor")
         monitorThread.isDaemon = true
         monitorThread.priority = Thread.MIN_PRIORITY

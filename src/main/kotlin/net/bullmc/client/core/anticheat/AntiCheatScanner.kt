@@ -123,8 +123,7 @@ class AntiCheatScanner(
                     }
                 }
             }
-        } catch (e: Exception) {
-            println("[ANTICHEAT] Ошибка сканирования процессов: ${e.message}")
+        } catch (_: Exception) {
         }
 
         if (found.isNotEmpty()) {

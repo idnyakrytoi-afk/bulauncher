@@ -46,8 +46,7 @@ class ViolationReporter {
 
         val body = try {
             json.encodeToString(payload)
-        } catch (e: Exception) {
-            println("[ANTICHEAT] Ошибка сериализации: ${e.message}")
+        } catch (_: Exception) {
             return false
         }
 
@@ -61,13 +60,9 @@ class ViolationReporter {
                 }
 
                 if (response.status == HttpStatusCode.OK) {
-                    println("[ANTICHEAT] Нарушения отправлены на $url")
                     return true
-                } else {
-                    println("[ANTICHEAT] Сервер вернул ${response.status} для $url")
                 }
-            } catch (e: Exception) {
-                println("[ANTICHEAT] Ошибка отправки на $url: ${e.message}")
+            } catch (_: Exception) {
             }
         }
 

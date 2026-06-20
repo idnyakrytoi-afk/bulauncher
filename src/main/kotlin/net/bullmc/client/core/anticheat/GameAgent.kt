@@ -20,7 +20,6 @@ object GameAgent {
     @JvmStatic
     fun premain(args: String?, inst: Instrumentation) {
         instrumentation = inst
-        println("[ANTICHEAT-AGENT] BullMC AntiCheat Agent (premain) загружен")
         registerTransformer(inst)
         scanLoadedClasses(inst)
         startRuntimeAIDetection(inst)
@@ -29,7 +28,6 @@ object GameAgent {
     @JvmStatic
     fun agentmain(args: String?, inst: Instrumentation) {
         instrumentation = inst
-        println("[ANTICHEAT-AGENT] BullMC AntiCheat Agent (agentmain) загружен")
         registerTransformer(inst)
         scanLoadedClasses(inst)
         startRuntimeAIDetection(inst)
@@ -52,40 +50,30 @@ object GameAgent {
 
                 if (isBlacklistedClassName(lower)) {
                     log("[BLOCKED] Запрещённый класс: $className")
-                    throw SecurityException(
-                        "[BullMC AntiCheat] Обнаружен запрещённый класс: $className. Игра будет закрыта."
-                    )
+                    throw SecurityException("Security violation")
                 }
 
                 if (isVanillaClass(className) && classBeingRedefined != null) {
                     log("[BLOCKED] Попытка модификации ванильного класса: $className")
-                    throw SecurityException(
-                        "[BullMC AntiCheat] Попытка модификации ванильного класса: $className. Игра будет закрыта."
-                    )
+                    throw SecurityException("Security violation")
                 }
 
                 val aiScore = analyzeClassWithAI(classfileBuffer, className, loader)
                 if (aiScore >= AI_THRESHOLD_CRITICAL) {
                     log("[AI-BLOCK] Критический AI-скор для $className: $aiScore")
-                    throw SecurityException(
-                        "[BullMC AntiCheat] AI-детект: критический класс $className (score: $aiScore). Игра будет закрыта."
-                    )
+                    throw SecurityException("Security violation")
                 }
                 if (aiScore >= AI_THRESHOLD_HIGH) {
                     suspiciousClassCount++
                     log("[AI-WARN] Подозрительный AI-скор для $className: $aiScore (подозрительных: $suspiciousClassCount)")
                     if (suspiciousClassCount >= 5) {
-                        throw SecurityException(
-                            "[BullMC AntiCheat] AI-детект: слишком много подозрительных классов ($suspiciousClassCount). Игра будет закрыта."
-                        )
+                        throw SecurityException("Security violation")
                     }
                 }
 
                 if (hasCheatBytecodePatterns(classfileBuffer, className)) {
                     log("[BLOCKED] Подозрительный bytecode в: $className")
-                    throw SecurityException(
-                        "[BullMC AntiCheat] Подозрительный класс: $className. Игра будет закрыта."
-                    )
+                    throw SecurityException("Security violation")
                 }
 
                 if (classBeingRedefined == null) {
@@ -110,7 +98,6 @@ object GameAgent {
             }.toTypedArray()
 
             if (toRetransform.isNotEmpty()) {
-                println("[ANTICHEAT-AGENT] Найдено ${toRetransform.size} уже загруженных запрещённых классов")
                 inst.retransformClasses(*toRetransform)
             }
         } catch (e: Exception) {
@@ -466,7 +453,6 @@ object GameAgent {
     }
 
     private fun log(message: String) {
-        println("[ANTICHEAT-AGENT] $message")
     }
 
     private const val AI_THRESHOLD_CRITICAL = 80
