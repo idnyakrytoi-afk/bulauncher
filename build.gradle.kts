@@ -22,6 +22,13 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
     implementation("org.xerial:sqlite-jdbc:3.44.1.0")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 compose.desktop {
@@ -35,7 +42,37 @@ compose.desktop {
     }
 }
 
+tasks.register<Jar>("buildAgentJar") {
+    dependsOn("compileKotlin")
+    archiveBaseName.set("bullmc-anticheat-agent")
+    archiveVersion.set("")
+
+    from("${buildDir}/classes/kotlin/main") {
+        include("net/bullmc/client/core/anticheat/GameAgent.class")
+    }
+
+    manifest {
+        attributes(
+            "Premain-Class" to "net.bullmc.client.core.anticheat.GameAgent",
+            "Agent-Class" to "net.bullmc.client.core.anticheat.GameAgent",
+            "Can-Retransform-Classes" to "true",
+            "Can-Redefine-Classes" to "true"
+        )
+    }
+
+    destinationDirectory.set(project.file("bin"))
+}
+
+tasks.named<ProcessResources>("processResources") {
+    dependsOn("buildAgentJar")
+    from("bin") {
+        include("bullmc-anticheat-agent.jar")
+        into("anticheat-agent")
+    }
+}
+
 tasks.jar {
+    dependsOn("buildAgentJar")
     manifest {
         attributes["Main-Class"] = "net.bullmc.client.MainKt"
     }

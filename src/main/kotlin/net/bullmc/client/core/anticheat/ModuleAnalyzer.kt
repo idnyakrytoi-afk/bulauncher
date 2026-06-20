@@ -21,18 +21,18 @@ class ModuleAnalyzer {
     }
 
     fun isFromSuspiciousPath(path: String): Boolean {
-        val lower = path.lowercase()
+        val lower = path.lowercase().replace("\\", "/")
         val suspiciousPaths = listOf(
-            "appdata\\local\\temp",
-            "appdata\\local\\microsoft\\windows\\inetcache",
-            "\\downloads\\",
-            "\\recycle",
-            "\\appdata\\roaming\\microsoft\\windows\\start menu",
-            "\\desktop\\cheat",
-            "\\desktop\\hack",
-            "\\desktop\\inject",
-            "\\tmp\\",
-            "\\temp\\"
+            "appdata/local/temp",
+            "appdata/local/microsoft/windows/inetcache",
+            "/downloads/",
+            "/recycle",
+            "appdata/roaming/microsoft/windows/start menu",
+            "/desktop/cheat",
+            "/desktop/hack",
+            "/desktop/inject",
+            "/tmp/",
+            "/temp/"
         )
 
         return suspiciousPaths.any { lower.contains(it) }
@@ -116,9 +116,8 @@ class ModuleAnalyzer {
     fun getPeInfo(file: File): PeInfo? {
         if (!file.exists() || !file.isFile) return null
 
-        return try {
-            val raf = RandomAccessFile(file, "r")
-
+        val raf = RandomAccessFile(file, "r")
+        try {
             raf.seek(0x3C)
             val peOffset = raf.readInt()
 
@@ -126,7 +125,6 @@ class ModuleAnalyzer {
             val peSignature = ByteArray(4)
             raf.read(peSignature)
             if (String(peSignature) != "PE${0.toChar()}${0.toChar()}") {
-                raf.close()
                 return null
             }
 
@@ -149,13 +147,13 @@ class ModuleAnalyzer {
             for (i in 0 until numberOfSections) {
                 val nameBytes = ByteArray(8)
                 raf.read(nameBytes)
-                            val name = String(nameBytes).trim { it.code == 0 }
+                val name = String(nameBytes).trim { it.code == 0 }
 
                 val virtualSize = raf.readInt()
                 val virtualAddress = raf.readInt()
                 val sizeOfRawData = raf.readInt()
                 val pointerToRawData = raf.readInt()
-                val characteristics = raf.readInt()
+                val chars = raf.readInt()
 
                 sections.add(SectionInfo(
                     name = name,
@@ -163,13 +161,11 @@ class ModuleAnalyzer {
                     virtualAddress = virtualAddress,
                     sizeOfRawData = sizeOfRawData,
                     pointerToRawData = pointerToRawData,
-                    characteristics = characteristics
+                    characteristics = chars
                 ))
             }
 
-            raf.close()
-
-            PeInfo(
+            return PeInfo(
                 machine = machine,
                 timestamp = timestamp,
                 characteristics = characteristics,
@@ -177,7 +173,9 @@ class ModuleAnalyzer {
                 is64Bit = is64
             )
         } catch (_: Exception) {
-            null
+            return null
+        } finally {
+            try { raf.close() } catch (_: Exception) {}
         }
     }
 

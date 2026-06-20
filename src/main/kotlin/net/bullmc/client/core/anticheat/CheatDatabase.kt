@@ -155,6 +155,11 @@ object CheatDatabase {
         val segments = lower.split("-", "_", " ")
         if (segments.any { it in blacklistedModNames }) return true
 
+        for (i in 0 until segments.size - 1) {
+            val compound = segments[i] + "-" + segments[i + 1]
+            if (compound in blacklistedModNames) return true
+        }
+
         if (blacklistedModFilePatterns.any { it.matches(fileName) }) return true
 
         return false
