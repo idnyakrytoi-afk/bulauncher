@@ -1,14 +1,14 @@
 package net.bullmc.client.ui.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -17,7 +17,16 @@ import net.bullmc.client.theme.LocalBullColors
 import java.awt.Desktop
 import java.net.URI
 
-private const val RATING_URL = "https://millida.net/rating/servers/bullcraft"
+private val voteLinks = listOf(
+    "Millida" to "https://millida.net/rating/servers/bullcraft",
+    "Top Minecrafter" to "https://top-minecrafter.com/server/bullcraft/",
+    "HotMC" to "https://hotmc.ru/minecraft-server-283171",
+    "KLauncher" to "https://klauncher.gg/monitoring/server/12929",
+    "McTop" to "https://mctop.su/servers/4415/servers/",
+    "MC Monitor" to "https://mc-monitor.org/server/7747",
+    "MisterLauncher" to "https://misterlauncher.org/server/bullmc/",
+    "MinecraftRating" to "https://minecraftrating.ru/server/bullpe/"
+)
 
 @Composable
 fun FriendsPanel(serverStatus: ServerStatus?, onAddServer: () -> Unit) {
@@ -54,22 +63,26 @@ fun FriendsPanel(serverStatus: ServerStatus?, onAddServer: () -> Unit) {
             Spacer(Modifier.height(12.dp))
             Text("Minecraft ${serverStatus.version}", fontSize = 14.sp, color = colors.textSecondary)
         }
-        Spacer(Modifier.height(28.dp))
-        Text("РЕЙТИНГ MILLIDA", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.textSecondary)
-        Spacer(Modifier.height(10.dp))
-        Text("BullCraft на Millida", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = colors.textPrimary)
-        Spacer(Modifier.height(7.dp))
-        Text("Новости сервера и голоса игроков", fontSize = 14.sp, color = colors.textSecondary)
-        Spacer(Modifier.height(14.dp))
-        Box(
-            modifier = Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(8.dp))
-                .background(colors.primary)
-                .clickable { runCatching { Desktop.getDesktop().browse(URI(RATING_URL)) } },
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Открыть страницу ↗", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = colors.onPrimary)
+        Spacer(Modifier.height(24.dp))
+        Divider(color = colors.border)
+        Spacer(Modifier.height(18.dp))
+        Text("Проголосуйте за наш сервер", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+        Spacer(Modifier.height(8.dp))
+        Text("Выберите мониторинг", fontSize = 14.sp, color = colors.textSecondary)
+        Spacer(Modifier.height(12.dp))
+        Column(modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
+            voteLinks.forEach { (name, url) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                        .clickable { runCatching { Desktop.getDesktop().browse(URI(url)) } },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = colors.textPrimary)
+                    Text("↗", fontSize = 17.sp, color = colors.primary)
+                }
+                Divider(color = colors.border)
+            }
         }
-        Spacer(Modifier.weight(1f))
-        Text("BullMC Client", fontSize = 13.sp, color = colors.textSecondary)
     }
 }

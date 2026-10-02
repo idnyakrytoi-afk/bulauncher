@@ -4,6 +4,17 @@
 
 [![BullCraft на Millida](https://millida.net/rating/servers/bullcraft/banner.svg)](https://millida.net/rating/servers/bullcraft)
 
+## Проголосуйте за BullCraft
+
+- [Millida](https://millida.net/rating/servers/bullcraft)
+- [Top Minecrafter](https://top-minecrafter.com/server/bullcraft/)
+- [HotMC](https://hotmc.ru/minecraft-server-283171)
+- [KLauncher](https://klauncher.gg/monitoring/server/12929)
+- [McTop](https://mctop.su/servers/4415/servers/)
+- [MC Monitor](https://mc-monitor.org/server/7747)
+- [MisterLauncher](https://misterlauncher.org/server/bullmc/)
+- [MinecraftRating](https://minecraftrating.ru/server/bullpe/)
+
 ## Возможности
 
 - **Microsoft Auth** — OAuth2 авторизация для серверов с проверкой
