@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import net.bullmc.client.core.launcher.VersionEntry
 import net.bullmc.client.theme.BullColors
 import net.bullmc.client.theme.LocalBullColors
@@ -45,27 +47,16 @@ fun VersionPickerDialog(
     // Сброс прокрутки при смене фильтра/поиска
     LaunchedEffect(filter, query) { listState.scrollToItem(0) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xB0000000))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { onDismiss() },
-        contentAlignment = Alignment.Center
-    ) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+      Box(modifier = Modifier.fillMaxSize().background(Color(0xB0000000)), contentAlignment = Alignment.Center) {
         Box(
             modifier = Modifier
-                .width(520.dp)
-                .height(560.dp)
-                .clip(RoundedCornerShape(18.dp))
+                .widthIn(max = 580.dp)
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.82f)
+                .clip(RoundedCornerShape(8.dp))
                 .background(colors.surface)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { }
-                .padding(20.dp)
+                .padding(24.dp)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
@@ -74,10 +65,10 @@ fun VersionPickerDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text("Выбор версии Minecraft", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+                        Text("Выбор версии Minecraft", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
                         Text(
                             "Доступны все версии: релизы, снапшоты и старые сборки",
-                            fontSize = 12.sp, color = colors.textMuted
+                            fontSize = 14.sp, color = colors.textSecondary
                         )
                     }
                     BullSecondaryButton(text = "✕", onClick = onDismiss, height = 34.dp)
@@ -110,7 +101,7 @@ fun VersionPickerDialog(
                     Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                         Text(
                             if (versionState.allVersions.isEmpty()) "Загрузка списка версий..." else "Ничего не найдено",
-                            fontSize = 13.sp, color = colors.textMuted
+                            fontSize = 15.sp, color = colors.textSecondary
                         )
                     }
                 } else {
@@ -134,6 +125,7 @@ fun VersionPickerDialog(
                 }
             }
         }
+      }
     }
 }
 
@@ -171,13 +163,13 @@ private fun VersionRow(
         Column {
             Text(
                 entry.id,
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 color = if (selected) colors.primary else colors.textPrimary
             )
             val date = entry.releaseTime.take(10)
             if (date.isNotEmpty()) {
-                Text(date, fontSize = 11.sp, color = colors.textMuted)
+                Text(date, fontSize = 13.sp, color = colors.textSecondary)
             }
         }
         BullBadge(text = typeLabel, color = typeColor)

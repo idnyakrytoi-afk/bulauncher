@@ -2,6 +2,8 @@
 
 Десктопный лаунчер для сервера BullMC.
 
+[![BullCraft на Millida](https://millida.net/rating/servers/bullcraft/banner.svg)](https://millida.net/rating/servers/bullcraft)
+
 ## Возможности
 
 - **Microsoft Auth** — OAuth2 авторизация для серверов с проверкой

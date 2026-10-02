@@ -51,24 +51,21 @@ object ServerApi {
 
     private val newsFile: File get() = File(LauncherPaths.root, "news.json")
 
-    private val defaultNews = listOf(
-        NewsItem("Добро пожаловать!", "Добро пожаловать на BullMC сервер!", "2024-01-01"),
-        NewsItem("Новые мини-игры", "Добавлены новые мини-игры на сервере", "2024-01-15"),
-        NewsItem("Обновление лаунчера", "Лаунчер обновлён с исправлениями", "2024-02-01")
-    )
+    private val sampleTitles = setOf("Добро пожаловать!", "Новые мини-игры", "Обновление лаунчера")
 
     fun loadNews(): List<NewsItem> {
         return try {
             if (newsFile.exists()) {
                 val text = newsFile.readText()
-                json.decodeFromString<List<NewsItem>>(text)
+                json.decodeFromString<List<NewsItem>>(text).filterNot {
+                    it.title in sampleTitles && it.date.startsWith("2024-0")
+                }
             } else {
-                saveNews(defaultNews)
-                defaultNews
+                emptyList()
             }
         } catch (e: Exception) {
             println("[API] Ошибка чтения новостей: ${e.message}")
-            defaultNews
+            emptyList()
         }
     }
 

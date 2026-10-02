@@ -72,7 +72,7 @@ fun TopBanner(
     val buttonEnabled = launchState == "READY" && nick.value.isNotBlank()
 
     Row(
-        modifier = Modifier.fillMaxWidth().height(348.dp),
+        modifier = Modifier.fillMaxWidth().height(364.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // ── Hero-карточка ────────────────────────────────────────────────
@@ -80,8 +80,8 @@ fun TopBanner(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .shadow(14.dp, RoundedCornerShape(20.dp), spotColor = colors.primary.copy(alpha = 0.35f))
-                .clip(RoundedCornerShape(20.dp))
+                .shadow(8.dp, RoundedCornerShape(8.dp), spotColor = colors.primary.copy(alpha = 0.2f))
+                .clip(RoundedCornerShape(8.dp))
                 .background(colors.surface)
         ) {
             // Фон: мягкий градиент + подсветка акцентом
@@ -110,7 +110,7 @@ fun TopBanner(
                     Image(
                         painter = androidx.compose.ui.res.painterResource("bull.png"),
                         contentDescription = "BullMC Logo",
-                        modifier = Modifier.height(72.dp),
+                        modifier = Modifier.height(96.dp),
                         contentScale = ContentScale.Fit
                     )
                 } else {
@@ -126,8 +126,8 @@ fun TopBanner(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    "Лаунчер нового поколения",
-                    fontSize = 13.sp,
+                    "BULLCRAFT · MINECRAFT",
+                    fontSize = 16.sp,
                     color = colors.textSecondary,
                     letterSpacing = 1.sp
                 )
@@ -147,7 +147,7 @@ fun TopBanner(
                         val animatedPlayers = rememberAnimatedPlayers(mainServer.playersOnline)
                         Text(
                             "$animatedPlayers/${mainServer.playersMax} игроков онлайн",
-                            fontSize = 13.sp,
+                            fontSize = 15.sp,
                             color = colors.textSecondary
                         )
                     }
@@ -161,7 +161,7 @@ fun TopBanner(
                     ) {
                         Box(modifier = Modifier.size(9.dp).clip(RoundedCornerShape(5.dp)).background(colors.error))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Сервер недоступен", fontSize = 13.sp, color = colors.textSecondary)
+                        Text(if (mainServer == null) "Проверяем сервер..." else "Сервер недоступен", fontSize = 15.sp, color = colors.textSecondary)
                     }
                 }
 
@@ -176,8 +176,8 @@ fun TopBanner(
 
                 if (statusMessage.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(12.dp))
-                    Column(modifier = Modifier.width(280.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(statusMessage, fontSize = 13.sp, color = colors.textSecondary)
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(statusMessage, fontSize = 14.sp, color = colors.textSecondary)
                         if (isBusy) {
                             Spacer(modifier = Modifier.height(6.dp))
                             AnimatedProgressBar(
@@ -197,8 +197,8 @@ fun TopBanner(
             modifier = Modifier.width(320.dp).fillMaxHeight(),
             contentPadding = PaddingValues(20.dp)
         ) {
-            Text("Запуск игры", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
-            Text("Настройте профиль и играйте", fontSize = 12.sp, color = colors.textMuted)
+            Text("Запуск игры", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+            Text("Настройте профиль и играйте", fontSize = 14.sp, color = colors.textSecondary)
             Spacer(modifier = Modifier.height(16.dp))
 
             FieldLabel("Ник в игре", colors)
@@ -235,8 +235,7 @@ fun TopBanner(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(selectedLoader.displayName, fontSize = 14.sp, color = colors.textPrimary, fontWeight = FontWeight.SemiBold)
-                BullBadge(text = "MC ${versionState.selectedVersion}", color = colors.primary)
+                Text(selectedLoader.displayName, fontSize = 16.sp, color = colors.textPrimary, fontWeight = FontWeight.SemiBold)
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -251,8 +250,8 @@ fun TopBanner(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Профиль", fontSize = 12.sp, color = colors.textMuted)
-                    Text(activeProfileName, fontSize = 13.sp, color = colors.textSecondary, fontWeight = FontWeight.SemiBold)
+                    Text("Профиль", fontSize = 14.sp, color = colors.textSecondary)
+                    Text(activeProfileName, fontSize = 14.sp, color = colors.textPrimary, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
                 Spacer(modifier = Modifier.height(10.dp))
             }
@@ -271,7 +270,7 @@ fun TopBanner(
                         "RUNNING" -> "Игра запущена"
                         else -> "Готов к запуску"
                     },
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     color = colors.textSecondary
                 )
             }
@@ -290,7 +289,7 @@ fun TopBanner(
 
 @Composable
 private fun FieldLabel(text: String, colors: BullColors) {
-    Text(text, fontSize = 12.sp, color = colors.textMuted, fontWeight = FontWeight.Medium)
+    Text(text, fontSize = 14.sp, color = colors.textSecondary, fontWeight = FontWeight.Medium)
 }
 
 @Composable
@@ -317,7 +316,7 @@ private fun VersionSelector(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 versionState.selectedVersion,
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 color = if (hovered && enabled) colors.primary else colors.textPrimary,
                 fontWeight = FontWeight.SemiBold
             )
@@ -336,7 +335,7 @@ private fun VersionSelector(
                 }
             )
         }
-        Text("Сменить ▾", fontSize = 12.sp, color = colors.primary, fontWeight = FontWeight.SemiBold)
+        Text("▾", fontSize = 20.sp, color = colors.primary, fontWeight = FontWeight.SemiBold)
     }
 }
 

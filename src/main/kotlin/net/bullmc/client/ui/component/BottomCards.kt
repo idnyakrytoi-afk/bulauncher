@@ -30,7 +30,7 @@ fun BottomCards(
     val colors = LocalBullColors.current
 
     Row(
-        modifier = Modifier.fillMaxWidth().height(196.dp),
+        modifier = Modifier.fillMaxWidth().height(220.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         AnimatedEntry(index = 0, modifier = Modifier.weight(1.25f)) {
@@ -40,7 +40,7 @@ fun BottomCards(
         AnimatedEntry(index = 1, modifier = Modifier.weight(1f)) {
             ServerCard(
                 modifier = Modifier.fillMaxSize(),
-                label = "Survival",
+                label = "Основной",
                 ip = "play.bullmc.net",
                 status = serverStatuses["play.bullmc.net"],
                 colors = colors
@@ -49,7 +49,7 @@ fun BottomCards(
         AnimatedEntry(index = 2, modifier = Modifier.weight(1f)) {
             ServerCard(
                 modifier = Modifier.fillMaxSize(),
-                label = "Creative",
+                label = "Дополнительный",
                 ip = "yt.bullmc.net",
                 status = serverStatuses["yt.bullmc.net"],
                 colors = colors
@@ -72,17 +72,17 @@ private fun NewsCard(modifier: Modifier = Modifier, news: List<NewsItem>, colors
                 Text("★", fontSize = 15.sp, color = colors.primary)
             }
             Spacer(modifier = Modifier.width(10.dp))
-            Text("Новости", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+            Text("Новости", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         if (news.isEmpty()) {
-            Text("Загрузка...", fontSize = 13.sp, color = colors.textMuted)
+            Text("Новостей пока нет", fontSize = 14.sp, color = colors.textSecondary)
         } else {
             news.take(3).forEach { item ->
-                Text(item.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = colors.textPrimary, maxLines = 1)
-                Text(item.content, fontSize = 12.sp, color = colors.textSecondary, maxLines = 2)
+                Text(item.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = colors.textPrimary, maxLines = 1)
+                Text(item.content, fontSize = 14.sp, color = colors.textSecondary, maxLines = 2)
                 Spacer(modifier = Modifier.height(6.dp))
             }
         }
@@ -107,7 +107,7 @@ private fun ServerCard(
                 Box(modifier = Modifier.size(9.dp).clip(RoundedCornerShape(5.dp)).background(colors.error))
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+            Text(label, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -120,12 +120,12 @@ private fun ServerCard(
             StatRow("Версия", status.version, colors)
             if (status.motd.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(7.dp))
-                Text(status.motd, fontSize = 12.sp, color = colors.textSecondary, maxLines = 2)
+                Text(status.motd, fontSize = 14.sp, color = colors.textSecondary, maxLines = 2)
             }
         } else {
-            Text("Офлайн", fontSize = 14.sp, color = colors.error, fontWeight = FontWeight.SemiBold)
+            Text(if (status == null) "Проверяем..." else "Недоступен", fontSize = 15.sp, color = if (status == null) colors.textSecondary else colors.error, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(5.dp))
-            Text(ip, fontSize = 12.sp, color = colors.textMuted)
+            Text(ip, fontSize = 14.sp, color = colors.textSecondary)
         }
     }
 }
@@ -133,7 +133,7 @@ private fun ServerCard(
 @Composable
 private fun StatRow(label: String, value: String, colors: BullColors, valueColor: Color? = null) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, fontSize = 13.sp, color = colors.textSecondary)
-        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = valueColor ?: colors.textPrimary)
+        Text(label, fontSize = 14.sp, color = colors.textSecondary)
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = valueColor ?: colors.textPrimary)
     }
 }

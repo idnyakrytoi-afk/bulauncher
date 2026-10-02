@@ -67,8 +67,8 @@ fun main() = application {
     LauncherPaths.writeLog("Launcher started. user.home=${System.getProperty("user.home")}")
 
     val windowState = rememberWindowState(
-        width = 1050.dp,
-        height = 680.dp,
+        width = 1280.dp,
+        height = 720.dp,
         position = WindowPosition.Aligned(androidx.compose.ui.Alignment.Center)
     )
 
@@ -273,10 +273,11 @@ fun main() = application {
         },
         state = windowState,
         title = "BullMC Client",
-        resizable = false,
+        resizable = true,
         icon = if (javaClass.classLoader.getResource("bull.png") != null)
             androidx.compose.ui.res.painterResource("bull.png") else null
     ) {
+        LaunchedEffect(Unit) { window.minimumSize = java.awt.Dimension(1100, 700) }
         CompositionLocalProvider(LocalBullColors provides bullColors(currentTheme)) {
         MaterialTheme(colors = ThemeManager.getColors(currentTheme)) {
             Crossfade(targetState = appState) { state ->
@@ -571,7 +572,7 @@ fun main() = application {
                                 }
 
                                 SidePanelVisibility(visible = currentScreen == "HOME") {
-                                    FriendsPanel(primaryColor = ThemeManager.getPrimaryColor(currentTheme), currentTheme = currentTheme)
+                                    FriendsPanel(serverStatus = serverStatuses["play.bullmc.net"])
                                 }
                             }
                         }

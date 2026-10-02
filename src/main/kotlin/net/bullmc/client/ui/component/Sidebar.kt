@@ -65,7 +65,7 @@ fun Sidebar(currentScreen: String, onNavigate: (String) -> Unit, primaryColor: C
 
     Column(
         modifier = Modifier
-            .width(92.dp)
+            .width(102.dp)
             .fillMaxHeight()
             .background(colors.background)
             .padding(vertical = 16.dp, horizontal = 12.dp),
@@ -156,8 +156,8 @@ private fun SidebarIcon(
 
     Box(
         modifier = Modifier
-            .width(68.dp)
-            .height(60.dp)
+            .width(78.dp)
+            .height(64.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(bgColor)
             .clickable(interactionSource = interactionSource, indication = null) { onClick() },
@@ -178,7 +178,7 @@ private fun SidebarIcon(
             Spacer(modifier = Modifier.height(5.dp))
             Text(
                 label,
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = iconColor,
                 fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
             )
