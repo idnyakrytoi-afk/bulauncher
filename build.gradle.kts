@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "net.bullmc"
-version = "0.1.3"
+version = "0.2.0-beta.1"
 
 repositories {
     mavenCentral()
@@ -27,6 +27,7 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("io.ktor:ktor-client-mock:2.3.6")
 }
 
 tasks.test {
@@ -39,7 +40,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.AppImage, TargetFormat.Exe, TargetFormat.Msi)
             packageName = "BullMCClient"
-            packageVersion = "0.1.3"
+            packageVersion = "0.2.0"
             description = "BullMC Client Launcher"
             vendor = "BullCraft"
 

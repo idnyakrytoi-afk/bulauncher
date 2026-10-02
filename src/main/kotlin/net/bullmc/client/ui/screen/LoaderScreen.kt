@@ -11,6 +11,7 @@ import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,11 +23,14 @@ import net.bullmc.client.core.loader.LoaderChannel
 import net.bullmc.client.core.loader.LoaderRegistry
 import net.bullmc.client.core.loader.LoaderType
 import net.bullmc.client.core.loader.LoaderVersionEntry
+import net.bullmc.client.core.loader.BullPerformancePreset
+import net.bullmc.client.core.mod.ModrinthApi
 import net.bullmc.client.theme.BullColors
 import net.bullmc.client.theme.LocalBullColors
 import net.bullmc.client.theme.ThemeManager
 import net.bullmc.client.ui.component.BullCard
 import net.bullmc.client.ui.component.BullSecondaryButton
+import net.bullmc.client.ui.component.BullPrimaryButton
 import net.bullmc.client.ui.component.BullSectionTitle
 import net.bullmc.client.ui.component.BullToggle
 import java.io.File
@@ -39,11 +43,15 @@ fun LoaderScreen(
     onLoaderVersionChanged: (String) -> Unit,
     enabledMods: List<String>,
     onModsChanged: (List<String>) -> Unit,
+    onPerformancePresetApplied: (List<String>) -> Unit,
     primaryColor: Color,
     selectedMcVersion: String,
     modsDir: File? = null
 ) {
     val colors = LocalBullColors.current
+    val scope = rememberCoroutineScope()
+    var presetLoading by remember { mutableStateOf(false) }
+    var presetMessage by remember { mutableStateOf("") }
 
     var loaderChannel by remember { mutableStateOf(LoaderChannel.STABLE) }
     var customVersion by remember { mutableStateOf("") }
@@ -71,6 +79,49 @@ fun LoaderScreen(
         Text("Лоадер и моды", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
         Text("Настройте мод-лоадер и установите моды", fontSize = 14.sp, color = colors.textMuted, modifier = Modifier.padding(top = 2.dp))
         Spacer(modifier = Modifier.height(20.dp))
+
+        BullCard(modifier = Modifier.fillMaxWidth(), colors = colors) {
+            BullSectionTitle("BullMC Performance", "Готовый набор для Fabric", colors = colors)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Sodium, Lithium, FerriteCore, ImmediatelyFast, EntityCulling и Dynamic FPS", fontSize = 14.sp, color = colors.textSecondary)
+            Spacer(modifier = Modifier.height(12.dp))
+            BullPrimaryButton(
+                text = if (presetLoading) "Проверяем совместимость..." else "Применить к профилю",
+                onClick = {
+                    scope.launch {
+                        presetLoading = true
+                        presetMessage = ""
+                        try {
+                            val api = ModrinthApi()
+                            val compatible = mutableListOf<String>()
+                            for (id in BullPerformancePreset.modIds) {
+                                val mod = LoaderRegistry.availableMods.first { it.id == id }
+                                if (api.hasCompatibleVersion(mod.slug, selectedMcVersion, LoaderType.FABRIC)) {
+                                    compatible += id
+                                }
+                            }
+                            if (compatible.isEmpty()) {
+                                presetMessage = "Для Minecraft $selectedMcVersion пока нет совместимых модов из набора"
+                            } else {
+                                onPerformancePresetApplied(compatible)
+                                presetMessage = "Профиль BullMC Performance: ${compatible.size} из ${BullPerformancePreset.modIds.size} модов для Minecraft $selectedMcVersion"
+                            }
+                        } catch (e: Exception) {
+                            presetMessage = "Не удалось проверить моды: ${e.message}"
+                        } finally {
+                            presetLoading = false
+                        }
+                    }
+                },
+                enabled = !presetLoading,
+                height = 44.dp
+            )
+            if (presetMessage.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(presetMessage, fontSize = 14.sp, color = colors.textSecondary)
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Выбор лоадера
         BullCard(modifier = Modifier.fillMaxWidth(), colors = colors) {

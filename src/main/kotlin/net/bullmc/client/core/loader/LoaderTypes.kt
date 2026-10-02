@@ -62,6 +62,8 @@ object LoaderRegistry {
         ModInfo("memoryleakfix", "MemoryLeakFix", "Исправление утечек памяти", LoaderType.FABRIC, ModCategory.OPTIMIZATION, "memoryleakfix"),
         ModInfo("lazydfu", "LazyDFU", "Ускорение запуска", LoaderType.FABRIC, ModCategory.OPTIMIZATION, "lazydfu"),
         ModInfo("entityculling", "EntityCulling", "Пропуск рендеринга невидимых сущностей", LoaderType.FABRIC, ModCategory.OPTIMIZATION, "entityculling"),
+        ModInfo("immediatelyfast", "ImmediatelyFast", "Ускорение рендеринга интерфейса и сущностей", LoaderType.FABRIC, ModCategory.OPTIMIZATION, "immediatelyfast"),
+        ModInfo("dynamicfps", "Dynamic FPS", "Снижение нагрузки, когда игра свёрнута", LoaderType.FABRIC, ModCategory.OPTIMIZATION, "dynamic-fps"),
         ModInfo("iris", "Iris", "Поддержка шейдеров (замена OptiFine)", LoaderType.FABRIC, ModCategory.RENDERING, "iris"),
         ModInfo("modmenu", "Mod Menu", "Меню модов в игре", LoaderType.FABRIC, ModCategory.UTILITIES, "modmenu"),
         ModInfo("clothconfig", "Cloth Config API", "API конфигурации для модов", LoaderType.FABRIC, ModCategory.UTILITIES, "cloth-config"),
@@ -83,7 +85,7 @@ object LoaderRegistry {
     fun getLoaderVersions(loader: LoaderType): List<String> {
         return when (loader) {
             LoaderType.VANILLA -> emptyList()
-            LoaderType.FABRIC -> listOf("0.19.3", "0.19.2", "0.19.1")
+            LoaderType.FABRIC -> emptyList()
             LoaderType.FORGE -> listOf("47.3.0", "47.2.0", "47.1.0")
             LoaderType.NEOFORGE -> listOf("21.4.86", "21.3.100", "21.2.0")
             LoaderType.QUILT -> listOf("0.27.0", "0.26.4", "0.25.1")
@@ -164,4 +166,8 @@ object LoaderRegistry {
             LoaderChannel.CUSTOM -> customVersion
         }
     }
+}
+
+object BullPerformancePreset {
+    val modIds = listOf("sodium", "lithium", "ferritecore", "immediatelyfast", "entityculling", "dynamicfps")
 }

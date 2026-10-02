@@ -74,12 +74,22 @@ class LoaderManager(
             return version
         }
 
-        val loaderVersionId = getLoaderVersionId(version, loader, loaderVersion)
+        val resolvedLoaderVersion = if (loader == LoaderType.FABRIC && loaderVersion.isBlank()) {
+            LoaderRegistry.fetchAvailableVersions(loader, version).firstOrNull { it.stable }?.version
+                ?: throw IllegalStateException("Нет стабильной версии Fabric для Minecraft $version")
+        } else loaderVersion
+        require(resolvedLoaderVersion.isNotBlank()) { "Выберите версию ${loader.displayName} для Minecraft $version" }
+        val loaderVersionId = getLoaderVersionId(version, loader, resolvedLoaderVersion)
 
         val loaderDir = File(versionsDir, loaderVersionId)
         val loaderJsonFile = File(loaderDir, "$loaderVersionId.json")
 
         if (loaderJsonFile.exists() && loaderJsonFile.length() > 0) {
+            if (loader == LoaderType.FABRIC || loader == LoaderType.QUILT) {
+                val libraries = json.parseToJsonElement(loaderJsonFile.readText()).jsonObject["libraries"]?.jsonArray
+                    ?: throw IllegalStateException("У $loaderVersionId отсутствует список библиотек")
+                downloadFabricLibraries(libraries)
+            }
             onProgress("Лоадер $loaderVersionId уже установлен", 0.8f)
             installMods(version, loader, enabledModIds)
             return loaderVersionId
@@ -88,10 +98,10 @@ class LoaderManager(
         loaderDir.mkdirs()
 
         when (loader) {
-            LoaderType.FABRIC -> installFabric(version, loaderVersion, loaderVersionId, loaderJsonFile)
-            LoaderType.FORGE -> installForge(version, loaderVersion, loaderVersionId, loaderJsonFile)
-            LoaderType.NEOFORGE -> installNeoForge(version, loaderVersion, loaderVersionId, loaderJsonFile)
-            LoaderType.QUILT -> installQuilt(version, loaderVersion, loaderVersionId, loaderJsonFile)
+            LoaderType.FABRIC -> installFabric(version, resolvedLoaderVersion, loaderVersionId, loaderJsonFile)
+            LoaderType.FORGE -> installForge(version, resolvedLoaderVersion, loaderVersionId, loaderJsonFile)
+            LoaderType.NEOFORGE -> installNeoForge(version, resolvedLoaderVersion, loaderVersionId, loaderJsonFile)
+            LoaderType.QUILT -> installQuilt(version, resolvedLoaderVersion, loaderVersionId, loaderJsonFile)
             LoaderType.VANILLA -> {}
         }
 
@@ -176,6 +186,7 @@ class LoaderManager(
     private suspend fun downloadFabricLibraries(libraries: JsonArray) {
         onProgress("Скачивание библиотек Fabric...", 0.5f)
         var count = 0
+        val failures = mutableListOf<String>()
         for (lib in libraries) {
             val libObj = lib.jsonObject
             val name = libObj["name"]?.jsonPrimitive?.content ?: continue
@@ -204,8 +215,10 @@ class LoaderManager(
                 count++
             } catch (e: Exception) {
                 println("[LOADER] Failed to download $fileName: ${e.message}")
+                failures += fileName
             }
         }
+        check(failures.isEmpty()) { "Не удалось скачать библиотеки лоадера: ${failures.joinToString()}" }
         println("[LOADER] Downloaded $count Fabric libraries")
     }
 
@@ -411,19 +424,8 @@ class LoaderManager(
 
         if (loader == LoaderType.FABRIC || loader == LoaderType.QUILT) {
             onProgress("Скачивание Fabric API...", 0.88f)
-            try {
-                val alreadyHasFabricApi = modsDir.listFiles()?.any {
-                    it.name.lowercase().contains("fabric-api") && it.name.endsWith(".jar")
-                } == true
-                if (!alreadyHasFabricApi) {
-                    modrinthApi.downloadMod("fabric-api", mcVersion, loader, modsDir)
-                    println("[MODS] Installed: Fabric API")
-                } else {
-                    println("[MODS] Fabric API already installed, skipping")
-                }
-            } catch (e: Exception) {
-                println("[MODS] Failed to install Fabric API: ${e.message}")
-            }
+            modrinthApi.downloadMod("fabric-api", mcVersion, loader, modsDir)
+            println("[MODS] Installed: Fabric API")
         }
 
         if (enabledModIds.isEmpty()) return
@@ -431,13 +433,14 @@ class LoaderManager(
         onProgress("Скачивание модов...", 0.9f)
 
         for (modId in enabledModIds) {
-            val modInfo = LoaderRegistry.availableMods.find { it.id == modId } ?: continue
-            try {
-                modrinthApi.downloadMod(modInfo.slug, mcVersion, loader, modsDir)
-                println("[MODS] Installed: ${modInfo.name}")
-            } catch (e: Exception) {
-                println("[MODS] Failed to install ${modInfo.name}: ${e.message}")
+            val modInfo = LoaderRegistry.getModsForLoader(loader).find { it.id == modId }
+            if (modInfo == null) {
+                println("[MODS] Пользовательский мод $modId: автоматическая проверка версии недоступна")
+                continue
             }
+            onProgress("Установка ${modInfo.name}...", 0.9f)
+            modrinthApi.downloadMod(modInfo.slug, mcVersion, loader, modsDir)
+            println("[MODS] Installed: ${modInfo.name}")
         }
     }
 }

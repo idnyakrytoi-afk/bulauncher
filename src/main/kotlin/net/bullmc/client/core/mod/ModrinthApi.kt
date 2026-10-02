@@ -9,9 +9,13 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import net.bullmc.client.core.loader.LoaderType
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 
 @Serializable
 data class ModrinthSearchResponse(
@@ -52,8 +56,17 @@ data class ModrinthProjectFull(
     val client_side: String = ""
 )
 
-class ModrinthApi {
-    private val client = HttpClient(CIO) {
+@Serializable
+data class ManagedModRecord(
+    val fileName: String,
+    val sha512: String,
+    val gameVersion: String,
+    val loader: LoaderType
+)
+
+class ModrinthApi(private val client: HttpClient = defaultClient()) {
+    companion object {
+    private fun defaultClient() = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true; isLenient = true })
         }
@@ -62,6 +75,7 @@ class ModrinthApi {
             connectTimeoutMillis = 10_000
         }
         followRedirects = true
+    }
     }
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -151,63 +165,102 @@ class ModrinthApi {
         }
     }
 
-    suspend fun downloadMod(slug: String, mcVersion: String, loader: LoaderType, modsDir: File) {
-        val loaderSlug = getLoaderSlugForMod(slug, loader)
+    suspend fun hasCompatibleVersion(slug: String, mcVersion: String, loader: LoaderType): Boolean =
+        compatibleVersions(slug, mcVersion, loader).isNotEmpty()
 
-        val versionUrl = io.ktor.http.URLBuilder("https://api.modrinth.com/v2/project/$slug/version").apply {
+    private suspend fun compatibleVersions(slug: String, mcVersion: String, loader: LoaderType): JsonArray {
+        val loaderSlug = getLoaderSlugForMod(slug, loader)
+        val versionUrl = URLBuilder("https://api.modrinth.com/v2/project/$slug/version").apply {
             parameters.append("game_versions", "[\"$mcVersion\"]")
             parameters.append("loaders", "[\"$loaderSlug\"]")
         }.buildString()
+        val response = client.get(versionUrl)
+        return json.parseToJsonElement(response.bodyAsText()).jsonArray
+    }
 
+    suspend fun downloadMod(slug: String, mcVersion: String, loader: LoaderType, modsDir: File): File {
+        modsDir.mkdirs()
+        val cached = readManagedMods(modsDir)[slug]
+        if (cached != null && cached.gameVersion == mcVersion && cached.loader == loader &&
+            cached.fileName == File(cached.fileName).name && cached.fileName.endsWith(".jar", ignoreCase = true)) {
+            val cachedFile = File(modsDir, cached.fileName)
+            if (cachedFile.isFile && sha512(cachedFile.readBytes()).equals(cached.sha512, ignoreCase = true)) {
+                return cachedFile
+            }
+        }
+        val version = compatibleVersions(slug, mcVersion, loader).firstOrNull()?.jsonObject
+            ?: throw IllegalStateException("Для $slug нет версии под Minecraft $mcVersion (${loader.displayName})")
+        val files = version["files"]?.jsonArray.orEmpty()
+        val selected = files.firstOrNull { it.jsonObject["primary"]?.jsonPrimitive?.booleanOrNull == true }
+            ?: files.firstOrNull()
+            ?: throw IllegalStateException("Для $slug нет файла загрузки")
+        val file = selected.jsonObject
+        val fileName = file["filename"]?.jsonPrimitive?.content
+            ?: throw IllegalStateException("У $slug не указано имя файла")
+        require(fileName == File(fileName).name && fileName.endsWith(".jar", ignoreCase = true)) {
+            "Недопустимое имя файла мода: $fileName"
+        }
+        val downloadUrl = file["url"]?.jsonPrimitive?.content
+            ?: throw IllegalStateException("У $slug не указана ссылка на файл")
+        val expectedHash = file["hashes"]?.jsonObject?.get("sha512")?.jsonPrimitive?.content
+            ?: throw IllegalStateException("У $slug нет SHA-512 для проверки файла")
+        val dest = File(modsDir, fileName)
+        if (dest.exists() && sha512(dest.readBytes()).equals(expectedHash, ignoreCase = true)) {
+            recordManagedMod(modsDir, slug, ManagedModRecord(fileName, expectedHash, mcVersion, loader))
+            return dest
+        }
+
+        val bytes = client.get(downloadUrl).readBytes()
+        check(bytes.isNotEmpty() && sha512(bytes).equals(expectedHash, ignoreCase = true)) {
+            "Проверка целостности $slug не прошла"
+        }
+        val temporary = File(modsDir, ".$fileName.part")
         try {
-            val response = client.get(versionUrl)
-            val body = response.bodyAsText()
+            temporary.writeBytes(bytes)
+            moveReplace(temporary, dest)
+        } finally {
+            temporary.delete()
+        }
+        println("[MODRINTH] Saved: ${dest.absolutePath} (${dest.length()} bytes)")
+        recordManagedMod(modsDir, slug, ManagedModRecord(fileName, expectedHash, mcVersion, loader))
+        return dest
+    }
 
-            if (body.isBlank()) {
-                println("[MODRINTH] Empty response for $slug")
-                return
-            }
+    private fun readManagedMods(modsDir: File): Map<String, ManagedModRecord> {
+        val index = File(modsDir, ".bullmc-managed-mods.json")
+        return if (index.exists()) {
+            try { json.decodeFromString<Map<String, ManagedModRecord>>(index.readText()) } catch (_: Exception) { emptyMap() }
+        } else emptyMap()
+    }
 
-            val versions = json.parseToJsonElement(body).jsonArray
-
-            if (versions.isEmpty()) {
-                println("[MODRINTH] No version found for $slug (MC $mcVersion, $loaderSlug)")
-                return
-            }
-
-            val latestVersion = versions[0].jsonObject
-            val files = latestVersion["files"]?.jsonArray
-            if (files == null || files.isEmpty()) {
-                println("[MODRINTH] No files for $slug")
-                return
-            }
-
-            val primaryFile = files[0].jsonObject
-            val downloadUrl = primaryFile["url"]?.jsonPrimitive?.content
-            val fileName = primaryFile["filename"]?.jsonPrimitive?.content
-
-            if (downloadUrl == null || fileName == null) {
-                println("[MODRINTH] Invalid file info for $slug")
-                return
-            }
-
-            val destFile = File(modsDir, fileName)
-            if (destFile.exists() && destFile.length() > 0) {
-                println("[MODRINTH] $fileName already exists, skipping")
-                return
-            }
-
-            println("[MODRINTH] Downloading $fileName...")
-            val fileResponse = client.get(downloadUrl)
-            val bytes = fileResponse.readBytes()
-            destFile.writeBytes(bytes)
-            println("[MODRINTH] Saved: ${destFile.absolutePath} (${destFile.length()} bytes)")
-
-        } catch (e: Exception) {
-            println("[MODRINTH] Error downloading $slug: ${e.message}")
-            throw e
+    private fun recordManagedMod(modsDir: File, slug: String, record: ManagedModRecord) {
+        val index = File(modsDir, ".bullmc-managed-mods.json")
+        val previous = readManagedMods(modsDir)
+        if (previous[slug] == record) return
+        val oldName = previous[slug]?.fileName
+        if (oldName != null && oldName == File(oldName).name && oldName.endsWith(".jar", ignoreCase = true)) {
+            val old = File(modsDir, oldName)
+            check(!old.exists() || old.delete()) { "Не удалось удалить старую версию $slug: $oldName" }
+        }
+        val temporary = File(modsDir, ".bullmc-managed-mods.json.part")
+        try {
+            temporary.writeText(json.encodeToString(previous + (slug to record)))
+            moveReplace(temporary, index)
+        } finally {
+            temporary.delete()
         }
     }
+
+    private fun moveReplace(source: File, target: File) {
+        try {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
+    }
+
+    private fun sha512(bytes: ByteArray): String = MessageDigest.getInstance("SHA-512")
+        .digest(bytes).joinToString("") { "%02x".format(it) }
 
     suspend fun downloadModById(projectId: String, mcVersion: String, loader: LoaderType, modsDir: File): Boolean {
         val loaderSlug = getLoaderSlug(loader)

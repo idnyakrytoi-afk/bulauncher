@@ -42,6 +42,7 @@ data class GameProfile(
 
 object ProfileManager {
     private val profilesFile: File get() = File(LauncherPaths.root, "profiles.json")
+    private val activeProfileFile: File get() = File(LauncherPaths.root, "active-profile.txt")
     private val json = Json { prettyPrint = true; ignoreUnknownKeys = true }
 
     @Volatile
@@ -58,7 +59,8 @@ object ProfileManager {
                 val saved = json.decodeFromString<List<GameProfile>>(profilesFile.readText())
                 profiles = saved.toMutableList()
                 if (profiles.isNotEmpty()) {
-                    activeProfileId = profiles.first().id
+                    val lastActiveId = runCatching { activeProfileFile.takeIf { it.exists() }?.readText()?.trim() }.getOrNull()
+                    activeProfileId = profiles.firstOrNull { it.id == lastActiveId }?.id ?: profiles.first().id
                 }
             } catch (e: Exception) {
                 println("[PROFILE] Error loading profiles: ${e.message}")
@@ -94,7 +96,9 @@ object ProfileManager {
     }
 
     fun setActiveProfile(id: String) {
+        require(profiles.any { it.id == id }) { "Профиль $id не найден" }
         activeProfileId = id
+        runCatching { activeProfileFile.writeText(id) }
     }
 
     fun createProfile(profile: GameProfile): GameProfile {
@@ -116,6 +120,7 @@ object ProfileManager {
         profiles.removeAll { it.id == id }
         if (activeProfileId == id) {
             activeProfileId = profiles.first().id
+            runCatching { activeProfileFile.writeText(activeProfileId) }
         }
         save()
     }

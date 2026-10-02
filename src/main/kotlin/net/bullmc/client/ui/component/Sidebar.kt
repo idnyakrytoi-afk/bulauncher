@@ -16,6 +16,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.FolderShared
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
@@ -46,10 +47,11 @@ data class SidebarItem(
 )
 
 /** Порядок экранов — используется для направления анимации перехода. */
-val SidebarScreens: List<String> = listOf("HOME", "BUILDS", "SHOP", "SERVERS", "ACCOUNT", "SETTINGS", "LOGS")
+val SidebarScreens: List<String> = listOf("HOME", "CLIENT", "BUILDS", "SHOP", "SERVERS", "ACCOUNT", "SETTINGS", "LOGS")
 
 private val items = listOf(
     SidebarItem("Главная", Icons.Default.Home, "HOME"),
+    SidebarItem("Клиент", Icons.Default.Build, "CLIENT"),
     SidebarItem("Сборки", Icons.Default.FolderShared, "BUILDS"),
     SidebarItem("Магазин", Icons.Default.ShoppingCart, "SHOP"),
     SidebarItem("Серверы", Icons.Default.List, "SERVERS"),

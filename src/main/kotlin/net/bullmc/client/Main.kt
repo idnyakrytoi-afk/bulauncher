@@ -433,7 +433,7 @@ fun main() = application {
                                                                         gameProcess = process
                                                                     } else {
                                                                         launchState = "READY"
-                                                                        statusMessage = "Ошибка запуска"
+                                                                        if (!statusMessage.startsWith("Ошибка")) statusMessage = "Ошибка запуска"
                                                                         logLines = logLines + "[LAUNCHER] Ошибка: process == null"
                                                                     }
                                                                 } catch (e: Exception) {
@@ -463,6 +463,73 @@ fun main() = application {
                                                             gameDir = activeProfile.getGameDir().absolutePath
                                                             modsDir = activeProfile.getModsDir().absolutePath
                                                         }
+                                                    )
+                                                }
+                                                "CLIENT" -> {
+                                                    LoaderScreen(
+                                                        selectedLoader = selectedLoader,
+                                                        onLoaderChanged = { loader ->
+                                                            if (selectedLoader != loader) {
+                                                                val newProfile = GameProfile(
+                                                                    name = "${loader.displayName} ${versionState.selectedVersion}",
+                                                                    mcVersion = versionState.selectedVersion,
+                                                                    loaderType = loader,
+                                                                    serverIp = defaultServer,
+                                                                    ramMb = ramMb
+                                                                )
+                                                                ProfileManager.createProfile(newProfile)
+                                                                ProfileManager.setActiveProfile(newProfile.id)
+                                                                profiles = ProfileManager.getProfiles()
+                                                                activeProfile = newProfile
+                                                                selectedLoader = loader
+                                                                selectedLoaderVersion = ""
+                                                                enabledMods = emptyList()
+                                                                gameDir = newProfile.getGameDir().absolutePath
+                                                                modsDir = newProfile.getModsDir().absolutePath
+                                                            }
+                                                        },
+                                                        selectedLoaderVersion = selectedLoaderVersion,
+                                                        onLoaderVersionChanged = { loaderVersion ->
+                                                            selectedLoaderVersion = loaderVersion
+                                                            ProfileManager.updateProfile(activeProfile.id) { this.loaderVersion = loaderVersion }
+                                                            activeProfile = ProfileManager.getActiveProfile()
+                                                        },
+                                                        enabledMods = enabledMods,
+                                                        onModsChanged = { modIds ->
+                                                            enabledMods = modIds.distinct()
+                                                            ProfileManager.updateProfile(activeProfile.id) { this.enabledMods = modIds.distinct() }
+                                                            activeProfile = ProfileManager.getActiveProfile()
+                                                        },
+                                                        onPerformancePresetApplied = { modIds ->
+                                                            val profileName = "BullMC Performance ${versionState.selectedVersion}"
+                                                            val existing = ProfileManager.getProfiles().firstOrNull {
+                                                                it.name == profileName && it.mcVersion == versionState.selectedVersion && it.loaderType == LoaderType.FABRIC
+                                                            }
+                                                            val presetProfile = if (existing != null) {
+                                                                ProfileManager.updateProfile(existing.id) { enabledMods = modIds }
+                                                                ProfileManager.getProfiles().first { it.id == existing.id }
+                                                            } else {
+                                                                ProfileManager.createProfile(GameProfile(
+                                                                    name = profileName,
+                                                                    mcVersion = versionState.selectedVersion,
+                                                                    loaderType = LoaderType.FABRIC,
+                                                                    enabledMods = modIds,
+                                                                    serverIp = defaultServer,
+                                                                    ramMb = ramMb
+                                                                ))
+                                                            }
+                                                            ProfileManager.setActiveProfile(presetProfile.id)
+                                                            profiles = ProfileManager.getProfiles()
+                                                            activeProfile = presetProfile
+                                                            selectedLoader = LoaderType.FABRIC
+                                                            selectedLoaderVersion = presetProfile.loaderVersion
+                                                            enabledMods = presetProfile.enabledMods
+                                                            gameDir = presetProfile.getGameDir().absolutePath
+                                                            modsDir = presetProfile.getModsDir().absolutePath
+                                                        },
+                                                        primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                                        selectedMcVersion = versionState.selectedVersion,
+                                                        modsDir = activeProfile.getModsDir()
                                                     )
                                                 }
                                                 "SHOP" -> {
