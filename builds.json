@@ -1,0 +1,139 @@
+[
+  {
+    "id": "community-fps-boost",
+    "name": "FPS Boost",
+    "author": "BullMC Team",
+    "description": "Максимальный FPS на сервере: Sodium, Lithium и чистка утечек памяти. Ставится в один клик.",
+    "mcVersion": "1.20.4",
+    "loader": "FABRIC",
+    "loaderVersion": "",
+    "mods": [
+      "sodium",
+      "lithium",
+      "entityculling",
+      "ferrite-core",
+      "lazydfu",
+      "memoryleakfix"
+    ],
+    "tags": [
+      "оптимизация",
+      "pvp"
+    ],
+    "ramMb": 4096,
+    "downloads": 1284,
+    "createdAt": 1730000000000,
+    "local": false
+  },
+  {
+    "id": "community-shaders",
+    "name": "Shaders & Beauty",
+    "author": "zakuril",
+    "description": "Картинка и шейдеры через Iris. Нужна видеокарта от 4 ГБ видеопамяти.",
+    "mcVersion": "1.20.4",
+    "loader": "FABRIC",
+    "loaderVersion": "",
+    "mods": [
+      "sodium",
+      "iris",
+      "entityculling",
+      "modmenu",
+      "cloth-config"
+    ],
+    "tags": [
+      "шейдеры",
+      "графика"
+    ],
+    "ramMb": 6144,
+    "downloads": 862,
+    "createdAt": 1731000000000,
+    "local": false
+  },
+  {
+    "id": "community-pvp-arena",
+    "name": "PvP Arena Pack",
+    "author": "DarkLord",
+    "description": "Сборка для PvP-арены: стабильный FPS, быстрая загрузка чанков, ничего лишнего.",
+    "mcVersion": "1.20.4",
+    "loader": "FABRIC",
+    "loaderVersion": "",
+    "mods": [
+      "sodium",
+      "lithium",
+      "memoryleakfix",
+      "entityculling",
+      "modmenu"
+    ],
+    "tags": [
+      "pvp",
+      "оптимизация"
+    ],
+    "ramMb": 4096,
+    "downloads": 1533,
+    "createdAt": 1732000000000,
+    "local": false
+  },
+  {
+    "id": "community-laptop-lite",
+    "name": "Lite Laptop",
+    "author": "BullMC Team",
+    "description": "Для слабых ноутбуков и встроенной графики. Только необходимое, 2 ГБ ОЗУ.",
+    "mcVersion": "1.20.4",
+    "loader": "FABRIC",
+    "loaderVersion": "",
+    "mods": [
+      "sodium",
+      "lazydfu",
+      "ferrite-core"
+    ],
+    "tags": [
+      "оптимизация",
+      "слабый пк"
+    ],
+    "ramMb": 2048,
+    "downloads": 741,
+    "createdAt": 1732500000000,
+    "local": false
+  },
+  {
+    "id": "community-neoforge-starter",
+    "name": "NeoForge Starter",
+    "author": "player228",
+    "description": "Стартовый набор на NeoForge 1.21 для модовых серверов.",
+    "mcVersion": "1.21.4",
+    "loader": "NEOFORGE",
+    "loaderVersion": "",
+    "mods": [
+      "embeddium",
+      "oculus"
+    ],
+    "tags": [
+      "neoforge",
+      "графика"
+    ],
+    "ramMb": 6144,
+    "downloads": 411,
+    "createdAt": 1733000000000,
+    "local": false
+  },
+  {
+    "id": "community-forge-classic",
+    "name": "Forge Classic",
+    "author": "player228",
+    "description": "Классика на Forge: оптимизация Rubidium плюс Mod Menu для настроек.",
+    "mcVersion": "1.20.1",
+    "loader": "FORGE",
+    "loaderVersion": "",
+    "mods": [
+      "rubidium",
+      "cloth-config"
+    ],
+    "tags": [
+      "forge",
+      "оптимизация"
+    ],
+    "ramMb": 4096,
+    "downloads": 198,
+    "createdAt": 1733400000000,
+    "local": false
+  }
+]

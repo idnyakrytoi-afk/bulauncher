@@ -1,3 +1,5 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+
 plugins {
     kotlin("jvm") version "1.9.20"
     id("org.jetbrains.compose") version "1.5.10"
@@ -35,44 +37,16 @@ compose.desktop {
     application {
         mainClass = "net.bullmc.client.MainKt"
         nativeDistributions {
-            targetFormats(org.jetbrains.compose.desktop.application.dsl.TargetFormat.Exe)
+            targetFormats(TargetFormat.AppImage, TargetFormat.Exe, TargetFormat.Msi)
             packageName = "BullMCClient"
             packageVersion = "0.1.1"
+            description = "BullMC Client Launcher"
+            vendor = "BullMC"
         }
     }
 }
 
-tasks.register<Jar>("buildAgentJar") {
-    dependsOn("compileKotlin")
-    archiveBaseName.set("bullmc-anticheat-agent")
-    archiveVersion.set("")
-
-    from("${buildDir}/classes/kotlin/main") {
-        include("net/bullmc/client/core/anticheat/GameAgent.class")
-    }
-
-    manifest {
-        attributes(
-            "Premain-Class" to "net.bullmc.client.core.anticheat.GameAgent",
-            "Agent-Class" to "net.bullmc.client.core.anticheat.GameAgent",
-            "Can-Retransform-Classes" to "true",
-            "Can-Redefine-Classes" to "true"
-        )
-    }
-
-    destinationDirectory.set(project.file("bin"))
-}
-
-tasks.named<ProcessResources>("processResources") {
-    dependsOn("buildAgentJar")
-    from("bin") {
-        include("bullmc-anticheat-agent.jar")
-        into("anticheat-agent")
-    }
-}
-
 tasks.jar {
-    dependsOn("buildAgentJar")
     manifest {
         attributes["Main-Class"] = "net.bullmc.client.MainKt"
     }

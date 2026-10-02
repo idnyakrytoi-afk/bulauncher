@@ -1,7 +1,6 @@
 package net.bullmc.client.ui.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,10 +16,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import net.bullmc.client.theme.LocalBullColors
+import net.bullmc.client.theme.ThemeName
+import net.bullmc.client.ui.component.BullSecondaryButton
 
 @Composable
-fun LogScreen(logLines: List<String>, isGameRunning: Boolean, primaryColor: Color) {
-    val cardShape = RoundedCornerShape(12.dp)
+fun LogScreen(logLines: List<String>, isGameRunning: Boolean, primaryColor: Color, currentTheme: ThemeName = ThemeName.DARK) {
+    val colors = LocalBullColors.current
     val listState = rememberLazyListState()
     var autoScroll by remember { mutableStateOf(true) }
 
@@ -30,40 +32,42 @@ fun LogScreen(logLines: List<String>, isGameRunning: Boolean, primaryColor: Colo
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+    Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text("Логи", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
+                Text("Логи", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
                 Text(
-                    "${logLines.size} строк" + if (isGameRunning) " \u2022 Running" else "",
-                    fontSize = 11.sp,
-                    color = if (isGameRunning) Color(0xFF34D399) else Color(0xFF484F58)
+                    "${logLines.size} строк" + if (isGameRunning) " • Running" else "",
+                    fontSize = 12.sp,
+                    color = if (isGameRunning) colors.success else colors.textMuted
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(if (autoScroll) primaryColor else Color(0xFF161B22))
-                    .clickable { autoScroll = !autoScroll }
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text("Auto-scroll", fontSize = 10.sp, color = Color.White)
-            }
+            BullSecondaryButton(
+                text = if (autoScroll) "Auto-scroll: вкл" else "Auto-scroll: выкл",
+                onClick = { autoScroll = !autoScroll },
+                colors = colors,
+                accent = autoScroll
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Box(
-            modifier = Modifier.fillMaxWidth().weight(1f).clip(cardShape).background(Color(0xFF0D1117)).padding(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .clip(RoundedCornerShape(14.dp))
+                .background(colors.surfaceSunken)
+                .padding(12.dp)
         ) {
             if (logLines.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Логи пусты. Запустите игру.", fontSize = 12.sp, color = Color(0xFF30363D))
+                    Text("Логи пусты. Запустите игру.", fontSize = 12.sp, color = colors.textMuted)
                 }
             } else {
                 LazyColumn(state = listState) {
@@ -71,17 +75,17 @@ fun LogScreen(logLines: List<String>, isGameRunning: Boolean, primaryColor: Colo
                         val color = when {
                             line.contains("ERROR", ignoreCase = true) ||
                             line.contains("Exception", ignoreCase = true) ||
-                            line.contains("FATAL", ignoreCase = true) -> Color(0xFFF87171)
-                            line.contains("WARN", ignoreCase = true) -> Color(0xFFFBBF24)
-                            line.contains("INFO", ignoreCase = true) -> Color(0xFF34D399)
-                            else -> Color(0xFF6E7681)
+                            line.contains("FATAL", ignoreCase = true) -> colors.error
+                            line.contains("WARN", ignoreCase = true) -> colors.warning
+                            line.contains("INFO", ignoreCase = true) -> colors.success
+                            else -> colors.textSecondary
                         }
                         Text(
                             line,
                             fontSize = 10.sp,
                             color = color,
                             fontFamily = FontFamily.Monospace,
-                            lineHeight = 14.sp,
+                            lineHeight = 15.sp,
                             modifier = Modifier.padding(vertical = 1.dp)
                         )
                     }

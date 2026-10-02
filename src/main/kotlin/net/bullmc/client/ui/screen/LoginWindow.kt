@@ -1,31 +1,37 @@
 package net.bullmc.client.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import net.bullmc.client.core.auth.AuthState
 import net.bullmc.client.core.auth.MicrosoftAuth
+import net.bullmc.client.theme.LocalBullColors
+import net.bullmc.client.ui.component.BullCard
+import net.bullmc.client.ui.component.BullPrimaryButton
+import net.bullmc.client.ui.component.BullSecondaryButton
+import net.bullmc.client.ui.component.BullTextField
 import java.awt.Desktop
 import java.net.URI
 
@@ -36,6 +42,7 @@ fun LoginWindow(
     primaryColor: Color,
     onLoginComplete: (nick: String, isOffline: Boolean) -> Unit
 ) {
+    val colors = LocalBullColors.current
     val scope = rememberCoroutineScope()
     var state by remember { mutableStateOf(microsoftAuth.state) }
     var deviceCodeInfo by remember { mutableStateOf(microsoftAuth.deviceCode) }
@@ -53,19 +60,15 @@ fun LoginWindow(
     var nickInput by remember { mutableStateOf(savedNick) }
     var isOfflineMode by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier.fillMaxSize().background(
-            Brush.verticalGradient(
-                colors = listOf(
-                    primaryColor.copy(alpha = 0.06f),
-                    Color(0xFF0D1117)
-                )
-            )
-        )
-    ) {
+    Box(modifier = Modifier.fillMaxSize().background(colors.background)) {
+        // Подсветка фона
         Box(
             modifier = Modifier.fillMaxSize().background(
-                Brush.verticalGradient(colors = listOf(Color(0x00000000), Color(0xDD0D1117)))
+                Brush.radialGradient(
+                    colors = listOf(colors.primary.copy(alpha = 0.18f), Color.Transparent),
+                    center = Offset(300f, 120f),
+                    radius = 800f
+                )
             )
         )
 
@@ -74,20 +77,36 @@ fun LoginWindow(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo
-            Text("BULL MC", fontSize = 42.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 6.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Войдите, чтобы начать игру", fontSize = 14.sp, color = Color(0xFF8B949E))
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Login card
+            val hasLogo = remember { Thread.currentThread().contextClassLoader?.getResource("bull.png") != null }
             Box(
                 modifier = Modifier
-                    .width(400.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFF161B22))
-                    .padding(28.dp)
+                    .size(84.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Brush.verticalGradient(colors.primaryGradient)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (hasLogo) {
+                    Image(
+                        painter = androidx.compose.ui.res.painterResource("bull.png"),
+                        contentDescription = "BullMC",
+                        modifier = Modifier.fillMaxSize().padding(12.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    Text("B", fontSize = 40.sp, fontWeight = FontWeight.Black, color = colors.onPrimary)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("BULL MC", fontSize = 30.sp, fontWeight = FontWeight.Black, color = colors.textPrimary, letterSpacing = 6.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Войдите, чтобы начать играть", fontSize = 13.sp, color = colors.textSecondary)
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            BullCard(
+                modifier = Modifier.width(420.dp),
+                colors = colors,
+                contentPadding = PaddingValues(28.dp)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -96,129 +115,104 @@ fun LoginWindow(
                     if (microsoftAuth.isLoggedIn()) {
                         val profile = microsoftAuth.playerProfile
                         if (profile != null) {
-                            Text("Вы вошли как", fontSize = 13.sp, color = Color(0xFF6E7681))
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(profile.name, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = primaryColor)
-                            Spacer(modifier = Modifier.height(20.dp))
+                            Text("Вы вошли как", fontSize = 12.sp, color = colors.textMuted)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(profile.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = colors.primary)
+                            Spacer(modifier = Modifier.height(22.dp))
 
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(46.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(primaryColor)
-                                    .clickable {
-                                        onLoginComplete(profile.name, false)
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("\u25B6  ИГРАТЬ", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
-                            }
+                            BullPrimaryButton(
+                                text = "ИГРАТЬ",
+                                onClick = { onLoginComplete(profile.name, false) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = colors,
+                                height = 48.dp
+                            )
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(38.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color(0xFFF87171).copy(alpha = 0.1f))
-                                    .clickable { microsoftAuth.logout() },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("Выйти из аккаунта", fontSize = 12.sp, color = Color(0xFFF87171))
-                            }
+                            BullSecondaryButton(
+                                text = "Выйти из аккаунта",
+                                onClick = { microsoftAuth.logout() },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = colors,
+                                height = 40.dp
+                            )
                         }
                     } else if (isOfflineMode) {
-                        // Offline login
-                        Text("Оффлайн вход", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFE6EDF3))
+                        Text("Оффлайн-вход", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text("Введите ник для игры", fontSize = 12.sp, color = Color(0xFF6E7681))
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        TextField(
-                            value = nickInput,
-                            onValueChange = { nickInput = it },
-                            placeholder = { Text("Ваш ник", color = Color(0xFF6E7681), fontSize = 15.sp) },
-                            singleLine = true,
-                            textStyle = androidx.compose.ui.text.TextStyle(color = Color(0xFFE6EDF3), fontSize = 16.sp),
-                            modifier = Modifier.fillMaxWidth().height(50.dp)
-                                .onKeyEvent { event ->
-                                    if (event.key == Key.Enter && nickInput.isNotBlank()) {
-                                        onLoginComplete(nickInput.trim(), true)
-                                        true
-                                    } else false
-                                },
-                            shape = RoundedCornerShape(10.dp),
-                            colors = TextFieldDefaults.textFieldColors(
-                                backgroundColor = Color(0xFF0D1117),
-                                cursorColor = primaryColor,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            )
-                        )
-
+                        Text("Введите ник для игры", fontSize = 12.sp, color = colors.textMuted)
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(46.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (nickInput.isNotBlank()) primaryColor else Color(0xFF30363D))
-                                .clickable(enabled = nickInput.isNotBlank()) {
-                                    onLoginComplete(nickInput.trim(), true)
-                                },
-                            contentAlignment = Alignment.Center
+                                .onKeyEvent { event ->
+                                    if (event.key == Key.Enter && nickInput.isNotBlank()) {
+                                        onLoginComplete(nickInput.trim(), true)
+                                        true
+                                    } else false
+                                }
                         ) {
-                            Text("\u25B6  ИГРАТЬ", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
+                            BullTextField(
+                                value = nickInput,
+                                onValueChange = { nickInput = it },
+                                placeholder = "Ваш ник",
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = colors,
+                                fontSize = 16
+                            )
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        BullPrimaryButton(
+                            text = "ИГРАТЬ",
+                            onClick = { onLoginComplete(nickInput.trim(), true) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = colors,
+                            enabled = nickInput.isNotBlank()
+                        )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
                             "← Назад",
                             fontSize = 12.sp,
-                            color = primaryColor,
+                            color = colors.primary,
                             modifier = Modifier.clickable { isOfflineMode = false }
                         )
-
                     } else when (state) {
                         AuthState.DEVICE_CODE_PENDING -> {
                             val code = deviceCodeInfo
                             if (code != null) {
-                                CircularProgressIndicator(color = primaryColor, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
+                                CircularProgressIndicator(color = colors.primary, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
                                 Spacer(modifier = Modifier.height(16.dp))
-
-                                Text("Перейдите по ссылке и введите код", fontSize = 13.sp, color = Color(0xFF8B949E), textAlign = TextAlign.Center)
+                                Text("Перейдите по ссылке и введите код", fontSize = 13.sp, color = colors.textSecondary, textAlign = TextAlign.Center)
                                 Spacer(modifier = Modifier.height(10.dp))
 
-                                // URL box
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(Color(0xFF0D1117))
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(colors.surfaceSunken)
                                         .clickable {
                                             try { Desktop.getDesktop().browse(URI(code.verificationUri)) } catch (_: Exception) {}
                                         }
                                         .padding(12.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(code.verificationUri, fontSize = 13.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
+                                    Text(code.verificationUri, fontSize = 13.sp, color = colors.primary, fontWeight = FontWeight.SemiBold)
                                 }
 
                                 Spacer(modifier = Modifier.height(14.dp))
-
-                                // Code display
-                                Text("Ваш код:", fontSize = 12.sp, color = Color(0xFF6E7681))
+                                Text("Ваш код:", fontSize = 12.sp, color = colors.textMuted)
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(Color(0xFF0D1117))
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(colors.surfaceSunken)
                                         .clickable {
                                             try {
                                                 val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
@@ -233,120 +227,100 @@ fun LoginWindow(
                                         code.userCode,
                                         fontSize = 32.sp,
                                         fontWeight = FontWeight.Black,
-                                        color = Color(0xFFE6EDF3),
+                                        color = colors.textPrimary,
                                         letterSpacing = 6.sp
                                     )
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("Нажмите на код чтобы скопировать", fontSize = 11.sp, color = Color(0xFF484F58))
-
+                                Text("Нажмите на код чтобы скопировать", fontSize = 11.sp, color = colors.textMuted)
                                 Spacer(modifier = Modifier.height(16.dp))
-                                CircularProgressIndicator(color = primaryColor, strokeWidth = 1.5.dp, modifier = Modifier.size(16.dp))
+                                CircularProgressIndicator(color = colors.primary, strokeWidth = 1.5.dp, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.height(6.dp))
-                                Text("Ожидание подтверждения...", fontSize = 11.sp, color = Color(0xFF6E7681))
-
+                                Text("Ожидание подтверждения...", fontSize = 11.sp, color = colors.textMuted)
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Text(
                                     "Отмена",
                                     fontSize = 12.sp,
-                                    color = Color(0xFFF87171),
-                                    modifier = Modifier.clickable {
-                                        microsoftAuth.cancelLogin()
-                                    }
+                                    color = colors.error,
+                                    modifier = Modifier.clickable { microsoftAuth.cancelLogin() }
                                 )
                             }
                         }
 
                         AuthState.AUTHENTICATING, AuthState.REFRESHING -> {
-                            CircularProgressIndicator(color = primaryColor, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
+                            CircularProgressIndicator(color = colors.primary, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 if (state == AuthState.AUTHENTICATING) "Получение профиля..." else "Обновление токена...",
                                 fontSize = 13.sp,
-                                color = Color(0xFF8B949E)
+                                color = colors.textSecondary
                             )
                         }
 
                         AuthState.SUCCESS -> {
                             val profile = microsoftAuth.playerProfile
                             if (profile != null) {
-                                Text("Добро пожаловать!", fontSize = 13.sp, color = Color(0xFF6E7681))
-                                Text(profile.name, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                                Text("Добро пожаловать!", fontSize = 13.sp, color = colors.textMuted)
+                                Text(profile.name, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = colors.primary)
                             }
                             Spacer(modifier = Modifier.height(12.dp))
-                            CircularProgressIndicator(color = primaryColor, strokeWidth = 2.dp)
+                            CircularProgressIndicator(color = colors.primary, strokeWidth = 2.dp)
                         }
 
                         else -> {
-                            // IDLE / FAILED
                             if (errorMessage.isNotEmpty()) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(Color(0xFFF87171).copy(alpha = 0.1f))
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(colors.error.copy(alpha = 0.12f))
                                         .padding(10.dp)
                                 ) {
-                                    Text(errorMessage, fontSize = 11.sp, color = Color(0xFFF87171), textAlign = TextAlign.Center)
+                                    Text(errorMessage, fontSize = 11.sp, color = colors.error, textAlign = TextAlign.Center)
                                 }
                                 Spacer(modifier = Modifier.height(12.dp))
                             }
 
-                            // Microsoft login button
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(46.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xFF0078D4))
-                                    .clickable {
-                                        scope.launch(Dispatchers.IO) {
-                                            val code = microsoftAuth.startDeviceCodeLogin()
-                                            if (code != null) {
-                                                try { Desktop.getDesktop().browse(URI(code.verificationUri)) } catch (_: Exception) {}
-                                                microsoftAuth.pollForToken(5)
-                                            }
+                            BullPrimaryButton(
+                                text = "Войти через Microsoft",
+                                onClick = {
+                                    scope.launch(Dispatchers.IO) {
+                                        val code = microsoftAuth.startDeviceCodeLogin()
+                                        if (code != null) {
+                                            try { Desktop.getDesktop().browse(URI(code.verificationUri)) } catch (_: Exception) {}
+                                            microsoftAuth.pollForToken(5)
                                         }
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("Войти через Microsoft", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            // Divider
-                            Row(
+                                    }
+                                },
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(modifier = Modifier.weight(1f).height(1.dp).background(Color(0xFF21262D)))
-                                Text("  или  ", fontSize = 12.sp, color = Color(0xFF484F58))
-                                Box(modifier = Modifier.weight(1f).height(1.dp).background(Color(0xFF21262D)))
+                                colors = colors
+                            )
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.weight(1f).height(1.dp).background(colors.border))
+                                Text("  или  ", fontSize = 12.sp, color = colors.textMuted)
+                                Box(modifier = Modifier.weight(1f).height(1.dp).background(colors.border))
                             }
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            // Offline button
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(46.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xFF21262D))
-                                    .clickable { isOfflineMode = true },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("Играть без аккаунта", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
-                            }
+                            BullSecondaryButton(
+                                text = "Играть без аккаунта",
+                                onClick = { isOfflineMode = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = colors,
+                                height = 46.dp
+                            )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("BullMC Client v0.1.0", fontSize = 11.sp, color = Color(0xFF30363D))
+            Spacer(modifier = Modifier.height(20.dp))
+            Text("BullMC Client v1.0.0", fontSize = 11.sp, color = colors.textMuted)
         }
     }
 }

@@ -1,5 +1,6 @@
 package net.bullmc.client
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -46,14 +47,19 @@ import net.bullmc.client.core.profile.GameProfile
 import net.bullmc.client.core.profile.ProfileManager
 import net.bullmc.client.core.mod.ModUpdateChecker
 import net.bullmc.client.core.util.*
+import net.bullmc.client.theme.LocalBullColors
 import net.bullmc.client.theme.ThemeManager
 import net.bullmc.client.theme.ThemeName
+import net.bullmc.client.theme.bullColors
 import net.bullmc.client.ui.component.*
 import net.bullmc.client.ui.screen.*
+import net.bullmc.client.ui.state.VersionState
 import java.awt.Desktop
 import java.io.File
 
 private const val LAUNCHER_VERSION = "1.0.0"
+
+enum class AppState { SPLASH, MAIN }
 
 fun main() = application {
     LauncherPaths.init()
@@ -78,7 +84,6 @@ fun main() = application {
 
     // Auto-download Java if missing
     var javaReady by remember { mutableStateOf(false) }
-    var javaDownloadMsg by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             val bundled = JavaDownloader.findJavaInDir(LauncherPaths.jre)
@@ -89,16 +94,11 @@ fun main() = application {
                 if (saved != "java" && File(saved).exists()) {
                     javaReady = true
                 } else {
-                    javaDownloadMsg = "Скачивание Java 21..."
-                    val downloaded = JavaDownloader.downloadJava(LauncherPaths.jre) { msg, _ ->
-                        javaDownloadMsg = msg
-                    }
+                    val downloaded = JavaDownloader.downloadJava(LauncherPaths.jre) { _, _ -> }
                     if (downloaded != null) {
                         auth.saveJavaPath(downloaded)
                         javaReady = true
-                        javaDownloadMsg = "Java установлена!"
                     } else {
-                        javaDownloadMsg = "Java не найдена. Установите вручную."
                         javaReady = true
                     }
                 }
@@ -124,8 +124,7 @@ fun main() = application {
     var progress by remember { mutableStateOf(0f) }
     var news by remember { mutableStateOf(listOf<NewsItem>()) }
 
-    var selectedVersion by remember { mutableStateOf("1.20.4") }
-    var availableVersions by remember { mutableStateOf(listOf("1.20.4")) }
+    val versionState = remember { VersionState("1.20.4") }
 
     var currentScreen by remember { mutableStateOf("HOME") }
     var logLines by remember { mutableStateOf(listOf<String>()) }
@@ -164,7 +163,7 @@ fun main() = application {
 
     // Sync profile state on load
     LaunchedEffect(Unit) {
-        selectedVersion = activeProfile.mcVersion
+        versionState.selectVersion(activeProfile.mcVersion)
         selectedLoader = activeProfile.loaderType
         selectedLoaderVersion = activeProfile.loaderVersion
         enabledMods = activeProfile.enabledMods
@@ -185,8 +184,7 @@ fun main() = application {
             
             val versions = launcher.getAvailableVersions()
             if (versions.isNotEmpty()) {
-                availableVersions = versions.map { it.id }
-                selectedVersion = versions.first().id
+                versionState.updateVersions(versions)
             }
             gameDir = activeProfile.getGameDir().absolutePath
             modsDir = activeProfile.getModsDir().absolutePath
@@ -200,7 +198,7 @@ fun main() = application {
             val modsDirFile = File(modsDir)
             if (modsDirFile.exists() && modsDirFile.listFiles()?.isNotEmpty() == true) {
                 withContext(Dispatchers.IO) {
-                    val updates = ModUpdateChecker.checkForUpdates(modsDirFile, selectedVersion, selectedLoader)
+                    val updates = ModUpdateChecker.checkForUpdates(modsDirFile, versionState.selectedVersion, selectedLoader)
                     if (updates.isNotEmpty()) {
                         logLines = logLines + "[UPDATE] Найдено ${updates.size} обновлений модов"
                         updates.forEach { update ->
@@ -220,7 +218,7 @@ fun main() = application {
         isGameRunning = true
         launchState = "RUNNING"
         statusMessage = "Игра запущена"
-        try { DiscordManager.setPlaying(selectedVersion, defaultServer) } catch (_: Exception) {}
+                                try { DiscordManager.setPlaying(versionState.selectedVersion, defaultServer) } catch (_: Exception) {}
         launch {
             withContext(Dispatchers.Main) {
                 logLines = logLines + "[LAUNCHER] Процесс PID=${proc.pid()}, isAlive=${proc.isAlive}"
@@ -266,6 +264,8 @@ fun main() = application {
         }
     }
 
+    var appState by remember { mutableStateOf(AppState.SPLASH) }
+
     Window(
         onCloseRequest = {
             try { DiscordManager.shutdown() } catch (_: Exception) {}
@@ -274,373 +274,326 @@ fun main() = application {
         state = windowState,
         title = "BullMC Client",
         resizable = false,
+        icon = if (javaClass.classLoader.getResource("bull.png") != null)
+            androidx.compose.ui.res.painterResource("bull.png") else null
     ) {
+        CompositionLocalProvider(LocalBullColors provides bullColors(currentTheme)) {
         MaterialTheme(colors = ThemeManager.getColors(currentTheme)) {
-            if (!loggedIn) {
-                LoginWindow(
-                    microsoftAuth = microsoftAuth,
-                    savedNick = savedNick,
-                    primaryColor = ThemeManager.getPrimaryColor(currentTheme),
-                    onLoginComplete = { nick, isOffline ->
-                        if (isOffline) {
-                            savedNick = nick
-                            auth.savePlayerNick(nick)
-                        }
-                        loginIsOffline = isOffline
-                        loggedIn = true
+            Crossfade(targetState = appState) { state ->
+                when (state) {
+                    AppState.SPLASH -> {
+                        SplashScreen(onReady = { appState = AppState.MAIN })
                     }
-                )
-            } else {
-            Row(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background).onKeyEvent { event ->
-                    if (event.key == Key.F8) {
-                        showConsole = !showConsole
-                        true
-                    } else {
-                        false
-                    }
-                }
-            ) {
-                // Update dialog
-                if (showUpdateDialog && updateUrl != null) {
-                    AlertDialog(
-                        onDismissRequest = { showUpdateDialog = false },
-                        buttons = {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(8.dp),
-                                horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Button(
-                                    onClick = { showUpdateDialog = false },
-                                    colors = androidx.compose.material.ButtonDefaults.buttonColors(
-                                        backgroundColor = Color(0xFF21262D)
-                                    )
-                                ) {
-                                    Text("Позже", color = Color(0xFF8B949E), fontSize = 12.sp)
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Button(
-                                    onClick = {
-                                        try {
-                                            java.awt.Desktop.getDesktop().browse(java.net.URI(updateUrl))
-                                        } catch (e: Exception) {
-                                            println("Ошибка открытия ссылки: ${e.message}")
-                                        }
-                                        showUpdateDialog = false
-                                    },
-                                    colors = androidx.compose.material.ButtonDefaults.buttonColors(
-                                        backgroundColor = ThemeManager.getPrimaryColor(currentTheme)
-                                    )
-                                ) {
-                                    Text("Скачать", color = Color.White, fontSize = 12.sp)
-                                }
-                            }
-                        },
-                        title = { Text("Доступно обновление!", color = Color(0xFFC9D1D9), fontSize = 16.sp) },
-                        text = { Text("Нажмите 'Скачать' для обновления лаунчера на новую версию.", color = Color(0xFF8B949E), fontSize = 13.sp) },
-                        backgroundColor = Color(0xFF161B22)
-                    )
-                }
-                
-                Sidebar(
-                    currentScreen = currentScreen,
-                    onNavigate = { screen -> currentScreen = screen },
-                    primaryColor = ThemeManager.getPrimaryColor(currentTheme)
-                )
-
-                Column(modifier = Modifier.weight(1f).fillMaxHeight().padding(16.dp)) {
-                    AnimatedContent(
-                        targetState = currentScreen,
-                        transitionSpec = {
-                            slideInHorizontally(initialOffsetX = { it }) + fadeIn() togetherWith
-                                    slideOutHorizontally(targetOffsetX = { -it }) + fadeOut()
-                        }
-                    ) { screen ->
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            when (screen) {
-                            "HOME" -> {
-                                TopBanner(
-                                savedNick = savedNick,
-                                launchState = launchState,
-                                statusMessage = statusMessage,
-                                progress = progress,
-                                selectedVersion = selectedVersion,
-                                versions = availableVersions,
-                                serverStatuses = serverStatuses,
-                                primaryColor = ThemeManager.getPrimaryColor(currentTheme),
-                                profiles = playerProfiles,
-                                onNickChanged = { newNick ->
-                                    savedNick = newNick
-                                    auth.setPlayerNickFromProfile(newNick)
-                                },
-                                onVersionSelected = { ver ->
-                                    selectedVersion = ver
-                                    val newName = "${selectedLoader.displayName} $ver"
-                                    ProfileManager.updateProfile(activeProfile.id) {
-                                        mcVersion = ver
-                                        name = newName
-                                    }
-                                    activeProfile = ProfileManager.getActiveProfile()
-                                    profiles = ProfileManager.getProfiles()
-                                },
-                                activeProfileName = activeProfile.name,
-                                selectedLoader = selectedLoader,
-                                onLaunch = { nick ->
-                                    savedNick = nick
-                                    auth.savePlayerNick(nick)
-                                    auth.saveSettings(ramMb, javaPath)
-                                    ProfileManager.updateProfile(activeProfile.id) {
-                                        mcVersion = selectedVersion
-                                        loaderType = selectedLoader
-                                        loaderVersion = selectedLoaderVersion
-                                        enabledMods = enabledMods
-                                        this.ramMb = ramMb
-                                        serverIp = defaultServer
-                                    }
-                                    launchState = "DOWNLOADING"
-                                    statusMessage = "Подготовка..."
-                                    progress = 0f
-                                    logLines = emptyList()
-                                    try { DiscordManager.setDownloading("Скачивание $selectedVersion") } catch (_: Exception) {}
-
-                                    coroutineScope.launch {
-                                        try {
-                                            logLines = logLines + "[LAUNCHER] Запуск: version=$selectedVersion, loader=$selectedLoader, nick=$nick"
-                                            val process = launcher.downloadAndLaunch(
-                                                version = selectedVersion,
-                                                playerNick = nick,
-                                                javaPath = javaPath,
-                                                ramMb = ramMb,
-                                                serverIp = defaultServer,
-                                                loader = selectedLoader,
-                                                loaderVersion = selectedLoaderVersion,
-                                                enabledModIds = enabledMods,
-                                                gameDir = activeProfile.getGameDir(),
-                                                onStatus = { msg, prog ->
-                                                    statusMessage = msg
-                                                    progress = prog
-                                                    if (msg.isNotEmpty()) logLines = logLines + "[LAUNCHER] $msg"
-                                                }
-                                            )
-                                            if (process != null) {
-                                                logLines = logLines + "[LAUNCHER] Процесс создан, PID: ${process.pid()}"
-                                                launchState = "LAUNCHING"
-                                                statusMessage = "Запуск..."
-                                                gameProcess = process
-                                            } else {
-                                                launchState = "READY"
-                                                statusMessage = "Ошибка запуска"
-                                                logLines = logLines + "[LAUNCHER] Ошибка: process == null"
-                                            }
-                                        } catch (e: Exception) {
-                                            logLines = logLines + "[LAUNCHER] Исключение: ${e.message}"
-                                            launchState = "READY"
-                                            statusMessage = "Ошибка: ${e.message}"
-                                        }
-                                    }
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            BottomCards(news = news, serverStatuses = serverStatuses, primaryColor = ThemeManager.getPrimaryColor(currentTheme))
-                        }
-
-                        "MODS" -> {
-                            LoaderScreen(
-                                selectedLoader = selectedLoader,
-                                onLoaderChanged = { loader ->
-                                    selectedLoader = loader
-                                    val newName = "${loader.displayName} $selectedVersion"
-                                    ProfileManager.updateProfile(activeProfile.id) {
-                                        loaderType = loader
-                                        name = newName
-                                    }
-                                    activeProfile = ProfileManager.getActiveProfile()
-                                    profiles = ProfileManager.getProfiles()
-                                },
-                                selectedLoaderVersion = selectedLoaderVersion,
-                                onLoaderVersionChanged = { ver ->
-                                    selectedLoaderVersion = ver
-                                    ProfileManager.updateProfile(activeProfile.id) { loaderVersion = ver }
-                                },
-                                enabledMods = enabledMods,
-                                onModsChanged = { mods ->
-                                    enabledMods = mods
-                                    ProfileManager.updateProfile(activeProfile.id) { enabledMods = mods }
-                                },
-                                primaryColor = ThemeManager.getPrimaryColor(currentTheme),
-                                selectedMcVersion = selectedVersion,
-                                modsDir = activeProfile.getModsDir()
-                            )
-                        }
-
-                        "SHOP" -> {
-                            ModBrowserScreen(
-                                primaryColor = ThemeManager.getPrimaryColor(currentTheme),
-                                mcVersion = selectedVersion,
-                                loader = selectedLoader,
-                                installedModSlugs = enabledMods,
-                                modsDir = activeProfile.getModsDir(),
-                                onModInstalled = { slug ->
-                                    if (slug !in enabledMods) {
-                                        val newMods = enabledMods + slug
-                                        enabledMods = newMods
-                                        ProfileManager.updateProfile(activeProfile.id) { enabledMods = newMods }
-                                    }
-                                }
-                            )
-                        }
-
-                        "SETTINGS" -> {
-                            SettingsScreen(
-                                ramMb = ramMb,
-                                onRamChanged = { ramMb = it },
-                                javaPath = javaPath,
-                                onJavaPathChanged = { newPath ->
-                                    javaPath = newPath
-                                    auth.saveJavaPath(newPath)
-                                },
-                                gameDir = gameDir,
-                                modsDir = modsDir,
-                                currentTheme = currentTheme,
-                                onThemeChanged = { newTheme ->
-                                    currentTheme = newTheme
-                                    auth.saveTheme(newTheme.name)
-                                },
-                                primaryColor = ThemeManager.getPrimaryColor(currentTheme),
-                                defaultServer = defaultServer,
-                                onDefaultServerChanged = { newServer ->
-                                    defaultServer = newServer
-                                    auth.setDefaultServer(newServer)
-                                },
-                                onOpenModsFolder = {
-                                    try {
-                                        val dir = File(modsDir)
-                                        if (!dir.exists()) dir.mkdirs()
-                                        Desktop.getDesktop().open(dir)
-                                    } catch (e: Exception) {
-                                        println("Ошибка открытия папки модов: ${e.message}")
-                                    }
-                                },
-                                profiles = profiles,
-                                activeProfileId = activeProfile.id,
-                                onProfileSelected = { id ->
-                                    ProfileManager.setActiveProfile(id)
-                                    activeProfile = ProfileManager.getActiveProfile()
-                                    selectedVersion = activeProfile.mcVersion
-                                    selectedLoader = activeProfile.loaderType
-                                    selectedLoaderVersion = activeProfile.loaderVersion
-                                    enabledMods = activeProfile.enabledMods
-                                    ramMb = activeProfile.ramMb
-                                    gameDir = activeProfile.getGameDir().absolutePath
-                                    modsDir = activeProfile.getModsDir().absolutePath
-                                },
-                                onProfileCreate = { name ->
-                                    val newProfile = GameProfile(name = name)
-                                    ProfileManager.createProfile(newProfile)
-                                    ProfileManager.setActiveProfile(newProfile.id)
-                                    profiles = ProfileManager.getProfiles()
-                                    activeProfile = newProfile
-                                    selectedVersion = newProfile.mcVersion
-                                    selectedLoader = newProfile.loaderType
-                                    selectedLoaderVersion = newProfile.loaderVersion
-                                    enabledMods = newProfile.enabledMods
-                                    gameDir = newProfile.getGameDir().absolutePath
-                                    modsDir = newProfile.getModsDir().absolutePath
-                                },
-                                onProfileDelete = { id ->
-                                    ProfileManager.deleteProfile(id)
-                                    profiles = ProfileManager.getProfiles()
-                                    activeProfile = ProfileManager.getActiveProfile()
-                                    selectedVersion = activeProfile.mcVersion
-                                    selectedLoader = activeProfile.loaderType
-                                    selectedLoaderVersion = activeProfile.loaderVersion
-                                    enabledMods = activeProfile.enabledMods
-                                    gameDir = activeProfile.getGameDir().absolutePath
-                                    modsDir = activeProfile.getModsDir().absolutePath
-                                },
-                                onProfileRename = { id, newName ->
-                                    ProfileManager.updateProfile(id) { name = newName }
-                                    profiles = ProfileManager.getProfiles()
-                                    activeProfile = ProfileManager.getActiveProfile()
-                                },
-                                autoStart = autoStartEnabled,
-                                onAutoStartChanged = { enabled ->
-                                    autoStartEnabled = enabled
-                                    net.bullmc.client.core.util.AutoStart.setEnabled(enabled)
-                                }
-                            )
-                        }
-
-                        "LOGS" -> {
-                            LogScreen(logLines = logLines, isGameRunning = isGameRunning, primaryColor = ThemeManager.getPrimaryColor(currentTheme))
-                        }
-
-                        "SERVERS" -> {
-                            val defaultServers = listOf("play.bullmc.net", "yt.bullmc.net")
-                            var savedServerList by remember {
-                                val loaded = auth.getSavedServers().ifEmpty { defaultServers }
-                                if (loaded != auth.getSavedServers()) auth.saveServers(loaded)
-                                mutableStateOf(loaded)
-                            }
-                            ServerBrowserScreen(
-                                primaryColor = ThemeManager.getPrimaryColor(currentTheme),
-                                savedServers = savedServerList,
-                                onAddServer = { ip ->
-                                    savedServerList = savedServerList + ip
-                                    auth.saveServers(savedServerList)
-                                },
-                                onRemoveServer = { ip ->
-                                    savedServerList = savedServerList - ip
-                                    auth.saveServers(savedServerList)
-                                },
-                                onJoinServer = { ip ->
-                                    defaultServer = ip
-                                    auth.setDefaultServer(ip)
-                                    currentScreen = "HOME"
-                                }
-                            )
-                        }
-
-                        "ACCOUNT" -> {
-                            AuthScreen(
+                    AppState.MAIN -> {
+                        if (!loggedIn) {
+                            LoginWindow(
                                 microsoftAuth = microsoftAuth,
+                                savedNick = savedNick,
                                 primaryColor = ThemeManager.getPrimaryColor(currentTheme),
-                                onAuthComplete = { name ->
-                                    if (name.isNotEmpty()) {
-                                        savedNick = name
-                                        auth.savePlayerNick(name)
+                                onLoginComplete = { nick, isOffline ->
+                                    if (isOffline) {
+                                        savedNick = nick
+                                        auth.savePlayerNick(nick)
                                     }
-                                    currentScreen = "HOME"
+                                    loginIsOffline = isOffline
+                                    loggedIn = true
                                 }
                             )
-                        }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxSize().background(LocalBullColors.current.windowGradient).onKeyEvent { event ->
+                                    if (event.key == Key.F8) {
+                                        showConsole = !showConsole
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                }
+                            ) {
+                                if (showUpdateDialog && updateUrl != null) {
+                                    AlertDialog(
+                                        onDismissRequest = { showUpdateDialog = false },
+                                        buttons = {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                                horizontalArrangement = Arrangement.End,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Button(
+                                                    onClick = { showUpdateDialog = false },
+                                                    colors = ButtonDefaults.buttonColors(backgroundColor = LocalBullColors.current.surfaceSunken)
+                                                ) {
+                                                    Text("Позже", color = LocalBullColors.current.textSecondary, fontSize = 12.sp)
+                                                }
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Button(
+                                                    onClick = {
+                                                        try { Desktop.getDesktop().browse(java.net.URI(updateUrl)) } catch (_: Exception) {}
+                                                        showUpdateDialog = false
+                                                    },
+                                                    colors = ButtonDefaults.buttonColors(backgroundColor = ThemeManager.getPrimaryColor(currentTheme))
+                                                ) {
+                                                    Text("Скачать", color = ThemeManager.onBackground(ThemeManager.getPrimaryColor(currentTheme)), fontSize = 12.sp)
+                                                }
+                                            }
+                                        },
+                                        title = { Text("Доступно обновление!", color = LocalBullColors.current.textPrimary, fontSize = 16.sp) },
+                                        text = { Text("Нажмите 'Скачать' для обновления лаунчера.", color = LocalBullColors.current.textSecondary, fontSize = 13.sp) },
+                                        backgroundColor = LocalBullColors.current.surface
+                                    )
+                                }
+
+                                Sidebar(
+                                    currentScreen = currentScreen,
+                                    onNavigate = { screen -> currentScreen = screen },
+                                    primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                    currentTheme = currentTheme
+                                )
+
+                                Column(modifier = Modifier.weight(1f).fillMaxHeight().padding(16.dp)) {
+                                    ScreenTransition(
+                                        targetState = currentScreen,
+                                        screenOrder = net.bullmc.client.ui.component.SidebarScreens
+                                    ) { screen ->
+                                        Column(modifier = Modifier.fillMaxSize()) {
+                                            when (screen) {
+                                                "HOME" -> {
+                                                    TopBanner(
+                                                        savedNick = savedNick,
+                                                        launchState = launchState,
+                                                        statusMessage = statusMessage,
+                                                        progress = progress,
+                                                        versionState = versionState,
+                                                        serverStatuses = serverStatuses,
+                                                        primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                                        profiles = playerProfiles,
+                                                        onNickChanged = { newNick ->
+                                                            savedNick = newNick
+                                                            auth.setPlayerNickFromProfile(newNick)
+                                                        },
+                                                        onVersionSelected = { ver ->
+                                                            versionState.selectVersion(ver)
+                                                            val newName = "${selectedLoader.displayName} $ver"
+                                                            ProfileManager.updateProfile(activeProfile.id) {
+                                                                mcVersion = ver
+                                                                name = newName
+                                                            }
+                                                            activeProfile = ProfileManager.getActiveProfile()
+                                                            profiles = ProfileManager.getProfiles()
+                                                        },
+                                                        activeProfileName = activeProfile.name,
+                                                        selectedLoader = selectedLoader,
+                                                        currentTheme = currentTheme,
+                                                        onLaunch = { nick ->
+                                                            savedNick = nick
+                                                            auth.savePlayerNick(nick)
+                                                            auth.saveSettings(ramMb, javaPath)
+                                                            ProfileManager.updateProfile(activeProfile.id) {
+                                                                mcVersion = versionState.selectedVersion
+                                                                loaderType = selectedLoader
+                                                                loaderVersion = selectedLoaderVersion
+                                                                enabledMods = enabledMods
+                                                                this.ramMb = ramMb
+                                                                serverIp = defaultServer
+                                                            }
+                                                            launchState = "DOWNLOADING"
+                                                            statusMessage = "Подготовка..."
+                                                            progress = 0f
+                                                            logLines = emptyList()
+                                                            try { DiscordManager.setDownloading("Скачивание ${versionState.selectedVersion}") } catch (_: Exception) {}
+                                                            coroutineScope.launch {
+                                                                try {
+                                                                    logLines = logLines + "[LAUNCHER] Запуск: version=${versionState.selectedVersion}, loader=$selectedLoader, nick=$nick"
+                                                                    val process = launcher.downloadAndLaunch(
+                                                                        version = versionState.selectedVersion,
+                                                                        playerNick = nick,
+                                                                        javaPath = javaPath,
+                                                                        ramMb = ramMb,
+                                                                        serverIp = defaultServer,
+                                                                        loader = selectedLoader,
+                                                                        loaderVersion = selectedLoaderVersion,
+                                                                        enabledModIds = enabledMods,
+                                                                        gameDir = activeProfile.getGameDir(),
+                                                                        onStatus = { msg, prog ->
+                                                                            statusMessage = msg
+                                                                            progress = prog
+                                                                            if (msg.isNotEmpty()) logLines = logLines + "[LAUNCHER] $msg"
+                                                                        }
+                                                                    )
+                                                                    if (process != null) {
+                                                                        logLines = logLines + "[LAUNCHER] Процесс создан, PID: ${process.pid()}"
+                                                                        launchState = "LAUNCHING"
+                                                                        statusMessage = "Запуск..."
+                                                                        gameProcess = process
+                                                                    } else {
+                                                                        launchState = "READY"
+                                                                        statusMessage = "Ошибка запуска"
+                                                                        logLines = logLines + "[LAUNCHER] Ошибка: process == null"
+                                                                    }
+                                                                } catch (e: Exception) {
+                                                                    logLines = logLines + "[LAUNCHER] Исключение: ${e.message}"
+                                                                    launchState = "READY"
+                                                                    statusMessage = "Ошибка: ${e.message}"
+                                                                }
+                                                            }
+                                                        }
+                                                    )
+                                                    Spacer(modifier = Modifier.height(16.dp))
+                                                    BottomCards(news = news, serverStatuses = serverStatuses, primaryColor = ThemeManager.getPrimaryColor(currentTheme), currentTheme = currentTheme)
+                                                }
+                                                "BUILDS" -> {
+                                                    BuildsScreen(
+                                                        primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                                        currentTheme = currentTheme,
+                                                        activeProfile = activeProfile,
+                                                        onProfileApplied = {
+                                                            activeProfile = ProfileManager.getActiveProfile()
+                                                            profiles = ProfileManager.getProfiles()
+                                                            versionState.selectVersion(activeProfile.mcVersion)
+                                                            selectedLoader = activeProfile.loaderType
+                                                            selectedLoaderVersion = activeProfile.loaderVersion
+                                                            enabledMods = activeProfile.enabledMods
+                                                            ramMb = activeProfile.ramMb
+                                                            gameDir = activeProfile.getGameDir().absolutePath
+                                                            modsDir = activeProfile.getModsDir().absolutePath
+                                                        }
+                                                    )
+                                                }
+                                                "SHOP" -> {
+                                                    ModBrowserScreen(
+                                                        primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                                        versionState = versionState,
+                                                        loader = selectedLoader,
+                                                        installedModSlugs = enabledMods,
+                                                        modsDir = activeProfile.getModsDir(),
+                                                        onModInstalled = { slug ->
+                                                            if (slug !in enabledMods) {
+                                                                val newMods = enabledMods + slug
+                                                                enabledMods = newMods
+                                                                ProfileManager.updateProfile(activeProfile.id) { enabledMods = newMods }
+                                                            }
+                                                        }
+                                                    )
+                                                }
+                                                "SETTINGS" -> {
+                                                    SettingsScreen(
+                                                        ramMb = ramMb,
+                                                        onRamChanged = { ramMb = it },
+                                                        javaPath = javaPath,
+                                                        onJavaPathChanged = { newPath -> javaPath = newPath; auth.saveJavaPath(newPath) },
+                                                        gameDir = gameDir,
+                                                        modsDir = modsDir,
+                                                        currentTheme = currentTheme,
+                                                        onThemeChanged = { newTheme -> currentTheme = newTheme; auth.saveTheme(newTheme.name) },
+                                                        primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                                        defaultServer = defaultServer,
+                                                        onDefaultServerChanged = { newServer -> defaultServer = newServer; auth.setDefaultServer(newServer) },
+                                                        onOpenModsFolder = {
+                                                            try { val dir = File(modsDir); if (!dir.exists()) dir.mkdirs(); Desktop.getDesktop().open(dir) } catch (_: Exception) {}
+                                                        },
+                                                        profiles = profiles,
+                                                        activeProfileId = activeProfile.id,
+                                                        onProfileSelected = { id ->
+                                                            ProfileManager.setActiveProfile(id)
+                                                            activeProfile = ProfileManager.getActiveProfile()
+                                                            versionState.selectVersion(activeProfile.mcVersion)
+                                                            selectedLoader = activeProfile.loaderType
+                                                            selectedLoaderVersion = activeProfile.loaderVersion
+                                                            enabledMods = activeProfile.enabledMods
+                                                            ramMb = activeProfile.ramMb
+                                                            gameDir = activeProfile.getGameDir().absolutePath
+                                                            modsDir = activeProfile.getModsDir().absolutePath
+                                                        },
+                                                        onProfileCreate = { name ->
+                                                            val newProfile = GameProfile(name = name)
+                                                            ProfileManager.createProfile(newProfile)
+                                                            ProfileManager.setActiveProfile(newProfile.id)
+                                                            profiles = ProfileManager.getProfiles()
+                                                            activeProfile = newProfile
+                                                            versionState.selectVersion(newProfile.mcVersion)
+                                                            selectedLoader = newProfile.loaderType
+                                                            selectedLoaderVersion = newProfile.loaderVersion
+                                                            enabledMods = newProfile.enabledMods
+                                                            gameDir = newProfile.getGameDir().absolutePath
+                                                            modsDir = newProfile.getModsDir().absolutePath
+                                                        },
+                                                        onProfileDelete = { id ->
+                                                            ProfileManager.deleteProfile(id)
+                                                            profiles = ProfileManager.getProfiles()
+                                                            activeProfile = ProfileManager.getActiveProfile()
+                                                            versionState.selectVersion(activeProfile.mcVersion)
+                                                            selectedLoader = activeProfile.loaderType
+                                                            selectedLoaderVersion = activeProfile.loaderVersion
+                                                            enabledMods = activeProfile.enabledMods
+                                                            gameDir = activeProfile.getGameDir().absolutePath
+                                                            modsDir = activeProfile.getModsDir().absolutePath
+                                                        },
+                                                        onProfileRename = { id, newName ->
+                                                            ProfileManager.updateProfile(id) { name = newName }
+                                                            profiles = ProfileManager.getProfiles()
+                                                            activeProfile = ProfileManager.getActiveProfile()
+                                                        },
+                                                        autoStart = autoStartEnabled,
+                                                        onAutoStartChanged = { enabled -> autoStartEnabled = enabled; net.bullmc.client.core.util.AutoStart.setEnabled(enabled) }
+                                                    )
+                                                }
+                                                "LOGS" -> {
+                                                    LogScreen(logLines = logLines, isGameRunning = isGameRunning, primaryColor = ThemeManager.getPrimaryColor(currentTheme), currentTheme = currentTheme)
+                                                }
+                                                "SERVERS" -> {
+                                                    val defaultServers = listOf("play.bullmc.net", "yt.bullmc.net")
+                                                    var savedServerList by remember {
+                                                        val loaded = auth.getSavedServers().ifEmpty { defaultServers }
+                                                        if (loaded != auth.getSavedServers()) auth.saveServers(loaded)
+                                                        mutableStateOf(loaded)
+                                                    }
+                                                    ServerBrowserScreen(
+                                                        primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                                        savedServers = savedServerList,
+                                                        onAddServer = { ip -> savedServerList = savedServerList + ip; auth.saveServers(savedServerList) },
+                                                        onRemoveServer = { ip -> savedServerList = savedServerList - ip; auth.saveServers(savedServerList) },
+                                                        onJoinServer = { ip -> defaultServer = ip; auth.setDefaultServer(ip); currentScreen = "HOME" }
+                                                    )
+                                                }
+                                                "ACCOUNT" -> {
+                                                    AuthScreen(
+                                                        microsoftAuth = microsoftAuth,
+                                                        primaryColor = ThemeManager.getPrimaryColor(currentTheme),
+                                                        onAuthComplete = { name ->
+                                                            if (name.isNotEmpty()) { savedNick = name; auth.savePlayerNick(name) }
+                                                            currentScreen = "HOME"
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                SidePanelVisibility(visible = currentScreen == "HOME") {
+                                    FriendsPanel(primaryColor = ThemeManager.getPrimaryColor(currentTheme), currentTheme = currentTheme)
+                                }
                             }
                         }
                     }
                 }
+            }
 
-                if (currentScreen == "HOME") {
-                    FriendsPanel(primaryColor = ThemeManager.getPrimaryColor(currentTheme))
-                }
-            }
-            }
-            
-            // Консоль логов (F8)
-            if (showConsole) {
+            BottomPanelVisibility(visible = showConsole) {
+                val consoleColors = LocalBullColors.current
+                val consoleBg = consoleColors.surface
+                val consoleCardBg = consoleColors.surfaceSunken
                 Box(
                     modifier = Modifier.fillMaxSize().background(Color(0xAA000000)).clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { }
+                    ) { showConsole = false }
                 ) {
                     Box(
-                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
+                        modifier = Modifier.align(Alignment.BottomCenter)
                             .fillMaxWidth(0.95f)
                             .fillMaxHeight(0.4f)
-                            .background(Color(0xFF0D1117), RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                            .background(consoleBg, RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
                             .padding(12.dp)
                     ) {
                         Column(modifier = Modifier.fillMaxSize()) {
@@ -651,31 +604,22 @@ fun main() = application {
                             ) {
                                 Text("Game Logs (F8 для закрытия)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC9D1D9))
                                 Box(
-                                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFF161B22))
+                                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(consoleCardBg)
                                         .clickable { logLines = emptyList() }.padding(6.dp)
                                 ) {
                                     Text("Clear", fontSize = 9.sp, color = Color(0xFF6E7681))
                                 }
                             }
-
                             Spacer(modifier = Modifier.height(8.dp))
-
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize().padding(8.dp),
-                                state = rememberLazyListState()
-                            ) {
+                            LazyColumn(modifier = Modifier.fillMaxSize().padding(8.dp), state = rememberLazyListState()) {
                                 items(logLines) { line ->
-                                    Text(
-                                        line,
-                                        fontSize = 9.sp,
-                                        color = Color(0xFF6E7681),
-                                        fontFamily = FontFamily.Monospace
-                                    )
+                                    Text(line, fontSize = 9.sp, color = Color(0xFF6E7681), fontFamily = FontFamily.Monospace)
                                 }
                             }
                         }
                     }
                 }
+            }
             }
         }
     }

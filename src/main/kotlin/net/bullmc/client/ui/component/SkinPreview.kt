@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import net.bullmc.client.core.util.SkinFetcher
+import net.bullmc.client.theme.LocalBullColors
 import org.jetbrains.skia.Image
 import java.io.File
 import javax.imageio.ImageIO
@@ -29,6 +30,7 @@ fun SkinPreview(
     primaryColor: Color,
     modifier: Modifier = Modifier
 ) {
+    val colors = LocalBullColors.current
     val scope = rememberCoroutineScope()
     var skinFile by remember { mutableStateOf<File?>(null) }
     var loading by remember { mutableStateOf(true) }
@@ -47,17 +49,17 @@ fun SkinPreview(
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF0D1117))
+            .clip(RoundedCornerShape(14.dp))
+            .background(colors.surface)
             .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
-            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF161B22)),
+            modifier = Modifier.size(80.dp).clip(RoundedCornerShape(10.dp)).background(colors.surfaceSunken),
             contentAlignment = Alignment.Center
         ) {
             if (loading) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = primaryColor, strokeWidth = 2.dp)
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = colors.primary, strokeWidth = 2.dp)
             } else {
                 skinFile?.let { file ->
                     val bitmap = remember(file) {
@@ -83,7 +85,7 @@ fun SkinPreview(
 
         if (nickname.isNotBlank()) {
             Spacer(modifier = Modifier.height(6.dp))
-            Text(nickname, fontSize = 11.sp, color = Color(0xFFC9D1D9), fontWeight = FontWeight.Bold)
+            Text(nickname, fontSize = 11.sp, color = colors.textPrimary, fontWeight = FontWeight.Bold)
         }
     }
 }

@@ -31,7 +31,8 @@ data class LatestVersions(
 data class VersionEntry(
     val id: String,
     val url: String,
-    val type: String
+    val type: String,
+    val releaseTime: String = ""
 )
 
 @Serializable
@@ -189,10 +190,13 @@ class MinecraftDownloader(
         return json.decodeFromString(text)
     }
 
+    /**
+     * Полный список версий из манифеста Mojang: release, snapshot, old_beta, old_alpha.
+     * Именно он даёт выбор любой версии игры, как в Legacy Launcher / TLauncher.
+     */
     suspend fun getAvailableVersions(): List<VersionEntry> {
         return try {
-            val manifest = fetchVersionManifest()
-            manifest.versions.filter { it.type == "release" }.take(20)
+            fetchVersionManifest().versions
         } catch (e: Exception) {
             println("Ошибка загрузки списка версий: ${e.message}")
             listOf(VersionEntry("1.20.4", "", "release"))

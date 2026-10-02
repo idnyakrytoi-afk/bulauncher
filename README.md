@@ -10,7 +10,9 @@
 - **Mod-лоадеры** — Fabric, Forge, NeoForge, Quilt с автоустановкой
 - **Fabric API** — скачивается автоматически
 - **Моды** — каталог из Modrinth, автообновление
+- **Сборки сообщества** — каталог готовых сборок от игроков: установка в один клик, публикация своей сборки, экспорт/импорт `.bullbuild`, общий индекс через GitHub
 - **Импорт модпаков** — поддержка MRPACK
+- **Анимации** — splash с прогрессом, каскадное появление списков, hover/press эффекты, пульсирующие статусы, анимированный прогресс загрузки, shimmer-заглушки
 - **Skin preview** — показывает скин по нику
 - **Crash reporter** — парсинг логов, диагностика крашей
 - **Server browser** — список серверов с пингом
@@ -23,11 +25,12 @@
 ```
 src/main/kotlin/net/bullmc/client/
 ├── Main.kt
-├── Animation.kt
+├── Animation.kt        — переиспользуемые анимации (переходы, hover, пульс, shimmer)
 ├── FileUtils.kt
 ├── api/ServerApi.kt
 ├── core/
 │   ├── auth/        — Auth, MicrosoftAuth
+│   ├── builds/      — CommunityBuild, BuildsRepository, BuildInstaller
 │   ├── launcher/    — Launcher, MinecraftDownloader, MinecraftLauncher
 │   ├── loader/      — LoaderManager, LoaderTypes
 │   ├── mod/         — ModrinthApi, ModDownloader, ModSettings, ModpackImporter
@@ -38,9 +41,21 @@ src/main/kotlin/net/bullmc/client/
 ├── theme/Theme.kt
 └── ui/
     ├── component/   — Sidebar, TopBanner, FriendsPanel, BottomCards, SkinPreview
-    └── screen/      — LoaderScreen, SettingsScreen, LogScreen, ModSettingsScreen,
-                        AuthScreen, ServerBrowserScreen
+    └── screen/      — BuildsScreen, LoaderScreen, SettingsScreen, LogScreen,
+                        ModSettingsScreen, AuthScreen, ServerBrowserScreen
 ```
+
+## Сборки сообщества
+
+Экран **Builds** в сайдбаре:
+
+- **Каталог** — встроенные сборки + сборки из общего индекса
+  (`https://raw.githubusercontent.com/idnyakrytoi-afk/bulauncher/main/builds.json`).
+- **Установка** — создаёт профиль с нужной версией/лоадером и докачивает моды из Modrinth.
+- **Публикация** — кнопка «+ Опубликовать» сохраняет текущий профиль как сборку
+  (в `~/.bullmc-client/builds.json`).
+- **Шеринг** — «Экспорт» создаёт файл `.bullbuild`; другой игрок импортирует его
+  через `BuildsRepository.importFromFile` (или файл добавляется в общий индекс PR-ом).
 
 ## Запуск
 
@@ -48,8 +63,23 @@ src/main/kotlin/net/bullmc/client/
 ./gradlew run
 ```
 
-## Сборка
+## Сборка .exe
+
+```powershell
+./build_launcher.ps1
+```
+
+или вручную:
 
 ```bash
-./gradlew packageDistributionForCurrentOS
+./gradlew createDistributable
+```
+
+Готовый лаунчер: `build/compose/binaries/main/app/BullMCClient/BullMCClient.exe`
+(распространяется всей папкой `BullMCClient` — внутри портативный runtime, Java не нужна).
+
+Установщик `.exe`/`.msi` (требует WiX, скачивается автоматически):
+
+```bash
+./gradlew packageExe
 ```

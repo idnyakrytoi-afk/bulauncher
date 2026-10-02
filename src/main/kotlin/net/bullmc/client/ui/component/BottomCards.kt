@@ -1,132 +1,139 @@
 package net.bullmc.client.ui.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import net.bullmc.client.AnimatedEntry
+import net.bullmc.client.PulsingDot
 import net.bullmc.client.api.NewsItem
 import net.bullmc.client.api.ServerStatus
+import net.bullmc.client.theme.BullColors
+import net.bullmc.client.theme.LocalBullColors
+import net.bullmc.client.theme.ThemeName
 
 @Composable
 fun BottomCards(
     news: List<NewsItem>,
     serverStatuses: Map<String, ServerStatus>,
-    primaryColor: Color
+    primaryColor: Color,
+    currentTheme: ThemeName = ThemeName.DARK
 ) {
+    val colors = LocalBullColors.current
+
     Row(
-        modifier = Modifier.fillMaxWidth().height(200.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.fillMaxWidth().height(196.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        NewsCard(modifier = Modifier.weight(1.2f), news = news, primaryColor = primaryColor)
+        AnimatedEntry(index = 0, modifier = Modifier.weight(1.25f)) {
+            NewsCard(modifier = Modifier.fillMaxSize(), news = news, colors = colors)
+        }
 
-        val mainStatus = serverStatuses["play.bullmc.net"]
-        val ytStatus = serverStatuses["yt.bullmc.net"]
-
-        ServerCard(modifier = Modifier.weight(1f), label = "Survival", ip = "play.bullmc.net", status = mainStatus)
-        ServerCard(modifier = Modifier.weight(1f), label = "Creative", ip = "yt.bullmc.net", status = ytStatus)
+        AnimatedEntry(index = 1, modifier = Modifier.weight(1f)) {
+            ServerCard(
+                modifier = Modifier.fillMaxSize(),
+                label = "Survival",
+                ip = "play.bullmc.net",
+                status = serverStatuses["play.bullmc.net"],
+                colors = colors
+            )
+        }
+        AnimatedEntry(index = 2, modifier = Modifier.weight(1f)) {
+            ServerCard(
+                modifier = Modifier.fillMaxSize(),
+                label = "Creative",
+                ip = "yt.bullmc.net",
+                status = serverStatuses["yt.bullmc.net"],
+                colors = colors
+            )
+        }
     }
 }
 
 @Composable
-private fun NewsCard(modifier: Modifier = Modifier, news: List<NewsItem>, primaryColor: Color) {
-    val cardShape = RoundedCornerShape(12.dp)
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
+private fun NewsCard(modifier: Modifier = Modifier, news: List<NewsItem>, colors: BullColors) {
+    BullCard(modifier = modifier, colors = colors, hoverable = true, contentPadding = PaddingValues(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(colors.primary.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("★", fontSize = 15.sp, color = colors.primary)
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Новости", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+        }
 
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(cardShape)
-            .shadow(4.dp, cardShape)
-            .background(if (isHovered) Color(0xFF1C2028) else Color(0xFF161B22))
-            .clickable(interactionSource = interactionSource, indication = null) { }
-            .padding(16.dp)
-    ) {
-        Column {
-            Text("\u2605", fontSize = 16.sp, color = primaryColor)
-            Spacer(modifier = Modifier.height(10.dp))
-            Text("Новости", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
-            Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-            if (news.isEmpty()) {
-                Text("Загрузка...", fontSize = 14.sp, color = Color(0xFF8B949E))
-            } else {
-                news.take(3).forEach { item ->
-                    Text(item.title, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFFE6EDF3))
-                    Text(item.content, fontSize = 13.sp, color = Color(0xFF8B949E), maxLines = 2)
-                    Spacer(modifier = Modifier.height(5.dp))
-                }
+        if (news.isEmpty()) {
+            Text("Загрузка...", fontSize = 13.sp, color = colors.textMuted)
+        } else {
+            news.take(3).forEach { item ->
+                Text(item.title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = colors.textPrimary, maxLines = 1)
+                Text(item.content, fontSize = 12.sp, color = colors.textSecondary, maxLines = 2)
+                Spacer(modifier = Modifier.height(6.dp))
             }
         }
     }
 }
 
 @Composable
-private fun ServerCard(modifier: Modifier = Modifier, label: String, ip: String, status: ServerStatus?) {
-    val cardShape = RoundedCornerShape(12.dp)
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
-
+private fun ServerCard(
+    modifier: Modifier = Modifier,
+    label: String,
+    ip: String,
+    status: ServerStatus?,
+    colors: BullColors
+) {
     val isOnline = status?.online == true
 
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(cardShape)
-            .shadow(4.dp, cardShape)
-            .background(if (isHovered) Color(0xFF1C2028) else Color(0xFF161B22))
-            .clickable(interactionSource = interactionSource, indication = null) { }
-            .padding(16.dp)
-    ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(if (isOnline) Color(0xFF34D399) else Color(0xFFF87171))
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            if (status != null && isOnline) {
-                StatRow("Статус", "Онлайн")
-                Spacer(modifier = Modifier.height(4.dp))
-                StatRow("Игроки", "${status.playersOnline}/${status.playersMax}")
-                Spacer(modifier = Modifier.height(4.dp))
-                StatRow("Версия", status.version)
-                if (status.motd.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(status.motd, fontSize = 12.sp, color = Color(0xFF8B949E), maxLines = 2)
-                }
+    BullCard(modifier = modifier, colors = colors, hoverable = true, contentPadding = PaddingValues(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (isOnline) {
+                PulsingDot(color = colors.success, size = 9.dp)
             } else {
-                Text("Офлайн", fontSize = 14.sp, color = Color(0xFFF87171))
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(ip, fontSize = 13.sp, color = Color(0xFF6E7681))
+                Box(modifier = Modifier.size(9.dp).clip(RoundedCornerShape(5.dp)).background(colors.error))
             }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (status != null && isOnline) {
+            StatRow("Статус", "Онлайн", colors, valueColor = colors.success)
+            Spacer(modifier = Modifier.height(5.dp))
+            StatRow("Игроки", "${status.playersOnline}/${status.playersMax}", colors)
+            Spacer(modifier = Modifier.height(5.dp))
+            StatRow("Версия", status.version, colors)
+            if (status.motd.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(7.dp))
+                Text(status.motd, fontSize = 12.sp, color = colors.textSecondary, maxLines = 2)
+            }
+        } else {
+            Text("Офлайн", fontSize = 14.sp, color = colors.error, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(5.dp))
+            Text(ip, fontSize = 12.sp, color = colors.textMuted)
         }
     }
 }
 
 @Composable
-private fun StatRow(label: String, value: String) {
+private fun StatRow(label: String, value: String, colors: BullColors, valueColor: Color? = null) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, fontSize = 13.sp, color = Color(0xFF8B949E))
-        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
+        Text(label, fontSize = 13.sp, color = colors.textSecondary)
+        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = valueColor ?: colors.textPrimary)
     }
 }

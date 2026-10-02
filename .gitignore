@@ -2,7 +2,6 @@
 .gradle/
 build/
 *.jar
-gradle/wrapper/*.zip
 
 # Kotlin
 *.class
@@ -20,4 +19,8 @@ gradle/wrapper/*.zip
 Thumbs.db
 
 # Local properties
+gradle.properties
 local.properties
+
+gradle/wrapper/gradle-8.10.2-bin.zip    
+bin/

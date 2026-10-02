@@ -1,28 +1,50 @@
 package net.bullmc.client.ui.component
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import net.bullmc.client.AnimatedProgressBar
+import net.bullmc.client.PulsingDot
+import net.bullmc.client.rememberBreathingScale
 import net.bullmc.client.api.ServerStatus
 import net.bullmc.client.core.loader.LoaderType
+import net.bullmc.client.theme.BullColors
+import net.bullmc.client.theme.LocalBullColors
+import net.bullmc.client.theme.ThemeName
+import net.bullmc.client.ui.state.VersionState
+
+/** Плавное изменение числа игроков онлайн. */
+@Composable
+private fun rememberAnimatedPlayers(target: Int): Int {
+    val value by androidx.compose.animation.core.animateIntAsState(
+        targetValue = target,
+        animationSpec = tween(600),
+        label = "playersCount"
+    )
+    return value
+}
 
 @Composable
 fun TopBanner(
@@ -30,8 +52,7 @@ fun TopBanner(
     launchState: String,
     statusMessage: String,
     progress: Float,
-    selectedVersion: String,
-    versions: List<String>,
+    versionState: VersionState,
     serverStatuses: Map<String, ServerStatus>,
     primaryColor: Color,
     profiles: List<String>,
@@ -39,226 +60,341 @@ fun TopBanner(
     onVersionSelected: (String) -> Unit,
     onLaunch: (String) -> Unit,
     activeProfileName: String = "",
-    selectedLoader: LoaderType = LoaderType.VANILLA
+    selectedLoader: LoaderType = LoaderType.VANILLA,
+    currentTheme: ThemeName = ThemeName.DARK
 ) {
+    val colors = LocalBullColors.current
     val nick = remember { mutableStateOf(savedNick) }
-    val shape = RoundedCornerShape(16.dp)
-    var versionMenuExpanded by remember { mutableStateOf(false) }
+    var showVersionPicker by remember { mutableStateOf(false) }
 
-    val buttonText = when (launchState) {
-        "READY" -> "\u25B6  PLAY"
-        "DOWNLOADING" -> "\u23F3  ЗАГРУЗКА..."
-        "LAUNCHING" -> "\u21BB  ЗАПУСК..."
-        "RUNNING" -> "\u2714  ЗАПУЩЕНА"
-        else -> "\u25B6  PLAY"
-    }
+    val isBusy = launchState == "DOWNLOADING" || launchState == "LAUNCHING"
+    val isRunning = launchState == "RUNNING"
     val buttonEnabled = launchState == "READY" && nick.value.isNotBlank()
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(340.dp)
-            .shadow(8.dp, shape)
-            .clip(shape)
-            .background(Color(0xFF0D1117))
+    Row(
+        modifier = Modifier.fillMaxWidth().height(348.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        val hasBanner = remember {
-            javaClass.classLoader.getResource("images/banner.png") != null
-        }
-
-        if (hasBanner) {
-            Image(
-                painter = androidx.compose.ui.res.painterResource("images/banner.png"),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        } else {
+        // ── Hero-карточка ────────────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .shadow(14.dp, RoundedCornerShape(20.dp), spotColor = colors.primary.copy(alpha = 0.35f))
+                .clip(RoundedCornerShape(20.dp))
+                .background(colors.surface)
+        ) {
+            // Фон: мягкий градиент + подсветка акцентом
             Box(
                 modifier = Modifier.fillMaxSize().background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            primaryColor.copy(alpha = 0.06f),
-                            Color(0xFF0D1117)
-                        )
+                    Brush.verticalGradient(listOf(colors.backgroundTop, colors.surface))
+                )
+            )
+            Box(
+                modifier = Modifier.fillMaxSize().background(
+                    Brush.radialGradient(
+                        colors = listOf(colors.primary.copy(alpha = 0.22f), Color.Transparent),
+                        center = Offset(240f, 40f),
+                        radius = 520f
                     )
                 )
             )
-        }
 
-        Box(
-            modifier = Modifier.fillMaxSize().background(
-                brush = Brush.verticalGradient(colors = listOf(Color(0x00000000), Color(0xDD0D1117)))
-            )
-        )
-
-        Row(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxSize().padding(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text("BULL MC", fontSize = 36.sp, fontWeight = FontWeight.Black, color = Color.White, letterSpacing = 4.sp)
+                val hasLogo = remember { javaClass.classLoader.getResource("bull.png") != null }
+                if (hasLogo) {
+                    Image(
+                        painter = androidx.compose.ui.res.painterResource("bull.png"),
+                        contentDescription = "BullMC Logo",
+                        modifier = Modifier.height(72.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    Text(
+                        "BULL MC",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Black,
+                        color = colors.textPrimary,
+                        letterSpacing = 6.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    "Лаунчер нового поколения",
+                    fontSize = 13.sp,
+                    color = colors.textSecondary,
+                    letterSpacing = 1.sp
+                )
 
                 val mainServer = serverStatuses["play.bullmc.net"]
+                Spacer(modifier = Modifier.height(14.dp))
                 if (mainServer != null && mainServer.online) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier.size(10.dp).clip(RoundedCornerShape(5.dp)).background(Color(0xFF34D399))
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            "${mainServer.playersOnline}/${mainServer.playersMax} игроков",
-                            fontSize = 14.sp,
-                            color = Color(0xFF8B949E)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                val btnInteraction = remember { MutableInteractionSource() }
-                val btnHovered by btnInteraction.collectIsHoveredAsState()
-                val animatedScale by androidx.compose.animation.core.animateFloatAsState(
-                    if (btnHovered) 1.03f else 1f,
-                    animationSpec = androidx.compose.animation.core.tween(150)
-                )
-
-                Button(
-                    onClick = { if (buttonEnabled) onLaunch(nick.value) },
-                    modifier = Modifier
-                        .width(260.dp)
-                        .height(54.dp)
-                        .graphicsLayer { scaleX = animatedScale; scaleY = animatedScale }
-                        .shadow(12.dp, RoundedCornerShape(12.dp)),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
-                    elevation = ButtonDefaults.elevation(0.dp),
-                    enabled = buttonEnabled,
-                    interactionSource = btnInteraction
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize().background(
-                            brush = Brush.horizontalGradient(
-                                colors = when {
-                                    !buttonEnabled && launchState != "READY" -> listOf(Color(0xFF30363D), Color(0xFF21262D))
-                                    btnHovered -> listOf(primaryColor.copy(alpha = 0.85f), primaryColor.copy(alpha = 0.65f))
-                                    else -> listOf(primaryColor, primaryColor.copy(alpha = 0.75f))
-                                }
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (launchState == "DOWNLOADING" || launchState == "LAUNCHING") {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
-                            }
-                        } else {
-                            Text(
-                                text = buttonText,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (launchState == "RUNNING") Color(0xFF34D399) else Color.White,
-                                letterSpacing = 2.sp
-                            )
-                        }
-                    }
-                }
-
-                if (statusMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Column(modifier = Modifier.width(260.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(statusMessage, fontSize = 13.sp, color = Color(0xFF8B949E))
-                        if (launchState == "DOWNLOADING") {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            LinearProgressIndicator(
-                                progress = progress,
-                                modifier = Modifier.width(260.dp).height(4.dp).clip(RoundedCornerShape(2.dp)),
-                                color = primaryColor,
-                                backgroundColor = Color(0xFF21262D)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(24.dp))
-
-            Column(
-                modifier = Modifier.width(280.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                TextField(
-                    value = nick.value,
-                    onValueChange = { nick.value = it; onNickChanged(nick.value) },
-                    placeholder = { Text("Введите ник", color = Color(0xFF8B949E), fontSize = 15.sp) },
-                    singleLine = true,
-                    textStyle = TextStyle(color = Color(0xFFE6EDF3), fontSize = 15.sp),
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    enabled = launchState == "READY",
-                    colors = TextFieldDefaults.textFieldColors(
-                        backgroundColor = Color(0xFF1C2128),
-                        cursorColor = primaryColor,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    )
-                )
-
-                Box {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth().height(44.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF1C2128))
-                            .clickable { if (launchState == "READY") versionMenuExpanded = true }
-                            .padding(horizontal = 16.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text("MC $selectedVersion", fontSize = 14.sp, color = Color(0xFFE6EDF3))
-                            Text(if (versionMenuExpanded) "\u25B2" else "\u25BC", fontSize = 11.sp, color = Color(0xFF8B949E))
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = versionMenuExpanded,
-                        onDismissRequest = { versionMenuExpanded = false },
-                        modifier = Modifier.width(280.dp).background(Color(0xFF1C2128), RoundedCornerShape(10.dp))
-                    ) {
-                        versions.forEach { version ->
-                            DropdownMenuItem(onClick = {
-                                onVersionSelected(version)
-                                versionMenuExpanded = false
-                            }) {
-                                Text(version, fontSize = 14.sp, color = if (version == selectedVersion) primaryColor else Color(0xFFE6EDF3))
-                            }
-                        }
-                    }
-                }
-
-                if (activeProfileName.isNotEmpty()) {
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF0D1117))
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(colors.surfaceSunken)
+                            .padding(horizontal = 14.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(activeProfileName, fontSize = 13.sp, color = Color(0xFF8B949E))
-                        Text(selectedLoader.displayName, fontSize = 13.sp, color = primaryColor, fontWeight = FontWeight.SemiBold)
+                        PulsingDot(color = colors.success, size = 9.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        val animatedPlayers = rememberAnimatedPlayers(mainServer.playersOnline)
+                        Text(
+                            "$animatedPlayers/${mainServer.playersMax} игроков онлайн",
+                            fontSize = 13.sp,
+                            color = colors.textSecondary
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(colors.surfaceSunken)
+                            .padding(horizontal = 14.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.size(9.dp).clip(RoundedCornerShape(5.dp)).background(colors.error))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Сервер недоступен", fontSize = 13.sp, color = colors.textSecondary)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(22.dp))
+
+                PlayButton(
+                    launchState = launchState,
+                    enabled = buttonEnabled,
+                    colors = colors,
+                    onClick = { if (buttonEnabled) onLaunch(nick.value) }
+                )
+
+                if (statusMessage.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(modifier = Modifier.width(280.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(statusMessage, fontSize = 13.sp, color = colors.textSecondary)
+                        if (isBusy) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            AnimatedProgressBar(
+                                progress = progress,
+                                color = colors.primary,
+                                backgroundColor = colors.surfaceSunken,
+                                modifier = Modifier.width(280.dp)
+                            )
+                        }
                     }
                 }
             }
+        }
+
+        // ── Панель запуска ───────────────────────────────────────────────
+        BullCard(
+            modifier = Modifier.width(320.dp).fillMaxHeight(),
+            contentPadding = PaddingValues(20.dp)
+        ) {
+            Text("Запуск игры", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+            Text("Настройте профиль и играйте", fontSize = 12.sp, color = colors.textMuted)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            FieldLabel("Ник в игре", colors)
+            Spacer(modifier = Modifier.height(6.dp))
+            BullTextField(
+                value = nick.value,
+                onValueChange = { nick.value = it; onNickChanged(it) },
+                placeholder = "Введите ник",
+                enabled = launchState == "READY",
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            FieldLabel("Версия Minecraft", colors)
+            Spacer(modifier = Modifier.height(6.dp))
+            VersionSelector(
+                versionState = versionState,
+                colors = colors,
+                enabled = launchState == "READY",
+                onClick = { showVersionPicker = true }
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            FieldLabel("Мод-лоадер", colors)
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(colors.surfaceSunken)
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(selectedLoader.displayName, fontSize = 14.sp, color = colors.textPrimary, fontWeight = FontWeight.SemiBold)
+                BullBadge(text = "MC ${versionState.selectedVersion}", color = colors.primary)
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (activeProfileName.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(colors.surfaceSunken)
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Профиль", fontSize = 12.sp, color = colors.textMuted)
+                    Text(activeProfileName, fontSize = 13.sp, color = colors.textSecondary, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(8.dp).clip(RoundedCornerShape(4.dp))
+                        .background(if (isRunning) colors.success else colors.primary)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    when (launchState) {
+                        "READY" -> "Готов к запуску"
+                        "DOWNLOADING" -> "Загрузка файлов..."
+                        "LAUNCHING" -> "Запуск игры..."
+                        "RUNNING" -> "Игра запущена"
+                        else -> "Готов к запуску"
+                    },
+                    fontSize = 12.sp,
+                    color = colors.textSecondary
+                )
+            }
+        }
+    }
+
+    if (showVersionPicker) {
+        VersionPickerDialog(
+            versionState = versionState,
+            onDismiss = { showVersionPicker = false },
+            onSelect = { onVersionSelected(it) },
+            colors = colors
+        )
+    }
+}
+
+@Composable
+private fun FieldLabel(text: String, colors: BullColors) {
+    Text(text, fontSize = 12.sp, color = colors.textMuted, fontWeight = FontWeight.Medium)
+}
+
+@Composable
+private fun VersionSelector(
+    versionState: VersionState,
+    colors: BullColors,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    val type = versionState.typeOf(versionState.selectedVersion)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(colors.surfaceSunken)
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled) { onClick() }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                versionState.selectedVersion,
+                fontSize = 14.sp,
+                color = if (hovered && enabled) colors.primary else colors.textPrimary,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            BullBadge(
+                text = when (type) {
+                    "snapshot" -> "Snapshot"
+                    "old_beta" -> "Beta"
+                    "old_alpha" -> "Alpha"
+                    else -> "Release"
+                },
+                color = when (type) {
+                    "snapshot" -> colors.warning
+                    "release" -> colors.success
+                    else -> colors.textMuted
+                }
+            )
+        }
+        Text("Сменить ▾", fontSize = 12.sp, color = colors.primary, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun PlayButton(
+    launchState: String,
+    enabled: Boolean,
+    colors: BullColors,
+    onClick: () -> Unit
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    val pressed by interaction.collectIsPressedAsState()
+    val breathing by rememberBreathingScale(enabled = enabled)
+    val hoverScale by animateFloatAsState(
+        targetValue = if (pressed) 0.97f else if (hovered) 1.03f else 1f,
+        animationSpec = tween(150),
+        label = "playHoverScale"
+    )
+    val finalScale = breathing * hoverScale
+
+    val text = when (launchState) {
+        "READY" -> "▶  ИГРАТЬ"
+        "DOWNLOADING" -> "ЗАГРУЗКА..."
+        "LAUNCHING" -> "ЗАПУСК..."
+        "RUNNING" -> "✔  ЗАПУЩЕНА"
+        else -> "▶  ИГРАТЬ"
+    }
+    val busy = launchState == "DOWNLOADING" || launchState == "LAUNCHING"
+    val running = launchState == "RUNNING"
+
+    val gradient = when {
+        running -> listOf(colors.success, colors.success.copy(alpha = 0.75f))
+        !enabled -> listOf(colors.borderStrong, colors.border)
+        hovered -> listOf(colors.primary, colors.primaryVariant)
+        else -> listOf(colors.primary.copy(alpha = 0.92f), colors.primaryVariant.copy(alpha = 0.92f))
+    }
+    val contentColor = if (running || enabled) Color.White else colors.textMuted
+
+    Box(
+        modifier = Modifier
+            .width(280.dp)
+            .height(56.dp)
+            .graphicsLayer { scaleX = finalScale; scaleY = finalScale }
+            .shadow(16.dp, RoundedCornerShape(14.dp), spotColor = colors.primary.copy(alpha = 0.6f))
+            .clip(RoundedCornerShape(14.dp))
+            .background(Brush.horizontalGradient(gradient), RoundedCornerShape(14.dp))
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        if (busy) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = contentColor, strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(text, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = contentColor, letterSpacing = 2.sp)
+            }
+        } else {
+            Text(text, fontSize = 18.sp, fontWeight = FontWeight.Black, color = contentColor, letterSpacing = 2.sp)
         }
     }
 }

@@ -5,26 +5,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
-import androidx.compose.material.Checkbox
-import androidx.compose.material.CheckboxDefaults
-import androidx.compose.material.Text
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.text.font.FontWeight
@@ -34,27 +28,37 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.bullmc.client.core.loader.LoaderType
 import net.bullmc.client.core.mod.BrowserMod
 import net.bullmc.client.core.mod.CurseForgeApi
 import net.bullmc.client.core.mod.ModSource
 import net.bullmc.client.core.mod.ModrinthApi
-import net.bullmc.client.core.loader.LoaderType
+import net.bullmc.client.theme.BullColors
+import net.bullmc.client.theme.LocalBullColors
+import net.bullmc.client.ui.component.BullCard
+import net.bullmc.client.ui.component.BullChip
+import net.bullmc.client.ui.component.BullPrimaryButton
+import net.bullmc.client.ui.component.BullSecondaryButton
+import net.bullmc.client.ui.component.BullTextField
+import net.bullmc.client.ui.component.VersionPickerDialog
+import net.bullmc.client.ui.state.VersionState
 import java.io.File
 
 @Composable
 fun ModBrowserScreen(
     primaryColor: Color,
-    mcVersion: String,
+    versionState: VersionState,
     loader: LoaderType,
     installedModSlugs: List<String>,
     modsDir: File,
     onModInstalled: (String) -> Unit
 ) {
-    val scope = rememberCoroutineScope()
+    val colors = LocalBullColors.current
     val modrinthApi = remember { ModrinthApi() }
     val curseForgeApi = remember { CurseForgeApi() }
 
     var searchQuery by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<BrowserMod>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var selectedSource by remember { mutableStateOf(ModSource.MODRINTH) }
@@ -63,37 +67,60 @@ fun ModBrowserScreen(
     var showSourceMenu by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
     var selectedSort by remember { mutableStateOf("relevance") }
-    var filterMcVersion by remember { mutableStateOf(mcVersion) }
-    var showVersionMenu by remember { mutableStateOf(false) }
+    var showVersionPicker by remember { mutableStateOf(false) }
 
-    val mcVersions = listOf("1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21", "1.20.6", "1.20.4", "1.20.3", "1.20.2", "1.20.1", "1.20", "1.19.4", "1.19.3", "1.19.2", "1.18.2", "1.16.5")
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isNotBlank()) {
+            kotlinx.coroutines.delay(500)
+            debouncedQuery = searchQuery
+        } else {
+            debouncedQuery = ""
+            searchResults = emptyList()
+        }
+    }
+
+    LaunchedEffect(debouncedQuery, selectedSource, versionState.selectedVersion, selectedCategory, selectedSort) {
+        if (debouncedQuery.isNotBlank()) {
+            isLoading = true
+            statusMessage = "Поиск в ${selectedSource.displayName}..."
+            withContext(Dispatchers.IO) {
+                val results = when (selectedSource) {
+                    ModSource.MODRINTH -> modrinthApi.searchMods(
+                        debouncedQuery, versionState.selectedVersion, loader, category = selectedCategory, sort = selectedSort
+                    )
+                    ModSource.CURSEFORGE -> curseForgeApi.searchMods(
+                        debouncedQuery, versionState.selectedVersion, loader, category = selectedCategory, sort = selectedSort
+                    )
+                }
+                withContext(Dispatchers.Main) {
+                    searchResults = results.map { mod -> mod.copy(installed = mod.slug in installedModSlugs) }
+                    isLoading = false
+                    statusMessage = if (results.isEmpty()) "Ничего не найдено" else ""
+                }
+            }
+        }
+    }
 
     val categories = listOf(
-        "all" to "\u2605 Все",
-        "optimization" to "\u26A1 Оптимизация",
-        "rendering" to "\uD83C\uDFA8 Рендеринг",
-        "utility" to "\uD83D\uDD27 Утилиты",
-        "technology" to "\u2699\uFE0F Технологии",
-        "adventure" to "\u2694\uFE0F Приключения",
-        "magic" to "\u2728 Магия",
-        "storage" to "\uD83D\uDCE6 Хранилище",
-        "farming" to "\uD83C\uDF3E Фермерство",
-        "decoration" to "\uD83C\uDFE0 Декор",
-        "mobs" to "\uD83D\uDC3E Мобы",
-        "food" to "\uD83C\uDF5C Еда",
-        "library" to "\uD83D\uDCDA Библиотеки",
-        "worldgen" to "\uD83C\uDF0D Генерация мира",
+        "all" to "★ Все",
+        "optimization" to "⚡ Оптимизация",
+        "rendering" to "🎨 Рендеринг",
+        "utility" to "🔧 Утилиты",
+        "technology" to "⚙️ Технологии",
+        "adventure" to "⚔️ Приключения",
+        "magic" to "✨ Магия",
+        "storage" to "📦 Хранилище",
+        "farming" to "🌾 Фермерство",
+        "decoration" to "🏠 Декор",
+        "mobs" to "🐾 Мобы",
+        "food" to "🍜 Еда",
+        "library" to "📚 Библиотеки",
+        "worldgen" to "🌍 Генерация мира",
     )
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp)
-    ) {
-        Text("Магазин модов", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
-        Text(
-            "Скачивайте моды с Modrinth и CurseForge",
-            fontSize = 14.sp, color = Color(0xFF6E7681),
-            modifier = Modifier.padding(top = 2.dp)
-        )
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text("Магазин модов", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+        Text("Скачивайте моды с Modrinth и CurseForge", fontSize = 14.sp, color = colors.textMuted, modifier = Modifier.padding(top = 2.dp))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -103,214 +130,92 @@ fun ModBrowserScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box {
-                Box(
-                    modifier = Modifier
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF1C2128))
-                        .clickable { showSourceMenu = true }
-                        .padding(horizontal = 14.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            selectedSource.displayName,
-                            fontSize = 14.sp,
-                            color = if (selectedSource == ModSource.MODRINTH) Color(0xFF34D399) else Color(0xFFF97316)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("\u25BC", fontSize = 10.sp, color = Color(0xFF8B949E))
-                    }
-                }
+                BullSecondaryButton(
+                    text = selectedSource.displayName + " ▾",
+                    onClick = { showSourceMenu = true },
+                    colors = colors,
+                    height = 46.dp,
+                    accent = true
+                )
                 DropdownMenu(
                     expanded = showSourceMenu,
                     onDismissRequest = { showSourceMenu = false },
-                    modifier = Modifier.background(Color(0xFF161B22))
+                    modifier = Modifier.background(colors.surface)
                 ) {
                     DropdownMenuItem(onClick = {
                         selectedSource = ModSource.MODRINTH
                         showSourceMenu = false
                         searchResults = emptyList()
                     }) {
-                        Text("Modrinth", color = Color(0xFF34D399))
+                        Text("Modrinth", color = colors.success)
                     }
                     DropdownMenuItem(onClick = {
                         selectedSource = ModSource.CURSEFORGE
                         showSourceMenu = false
                         searchResults = emptyList()
                     }) {
-                        Text("CurseForge", color = Color(0xFFF97316))
+                        Text("CurseForge", color = colors.warning)
                     }
                 }
             }
 
-            Box {
-                Box(
-                    modifier = Modifier
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF1C2128))
-                        .clickable { showVersionMenu = true }
-                        .padding(horizontal = 14.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "MC $filterMcVersion",
-                            fontSize = 13.sp,
-                            color = Color(0xFFE6EDF3)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("\u25BC", fontSize = 10.sp, color = Color(0xFF8B949E))
-                    }
-                }
-                DropdownMenu(
-                    expanded = showVersionMenu,
-                    onDismissRequest = { showVersionMenu = false },
-                    modifier = Modifier.background(Color(0xFF161B22)).width(120.dp).heightIn(max = 300.dp)
-                ) {
-                    mcVersions.forEach { version ->
-                        DropdownMenuItem(onClick = {
-                            filterMcVersion = version
-                            showVersionMenu = false
-                        }) {
-                            Text(
-                                version,
-                                fontSize = 13.sp,
-                                color = if (version == filterMcVersion) primaryColor else Color(0xFFE6EDF3)
-                            )
-                        }
-                    }
-                }
-            }
-
-            TextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Поиск модов...", color = Color(0xFF8B949E), fontSize = 14.sp) },
-                singleLine = true,
-                textStyle = androidx.compose.ui.text.TextStyle(color = Color(0xFFE6EDF3), fontSize = 14.sp),
-                modifier = Modifier.weight(1f).height(44.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color(0xFF1C2128),
-                    cursorColor = primaryColor,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
+            BullSecondaryButton(
+                text = "MC ${versionState.selectedVersion} ▾",
+                onClick = { showVersionPicker = true },
+                colors = colors,
+                height = 46.dp
             )
 
-            Box(
-                modifier = Modifier
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(primaryColor)
-                    .clickable {
-                        if (searchQuery.isNotBlank()) {
-                            scope.launch(Dispatchers.IO) {
-                                isLoading = true
-                                statusMessage = "Поиск в ${selectedSource.displayName}..."
-                                val results = when (selectedSource) {
-                                    ModSource.MODRINTH -> modrinthApi.searchMods(
-                                        searchQuery, filterMcVersion, loader, category = selectedCategory, sort = selectedSort
-                                    )
-                                    ModSource.CURSEFORGE -> curseForgeApi.searchMods(
-                                        searchQuery, filterMcVersion, loader, category = selectedCategory, sort = selectedSort
-                                    )
-                                }
-                                withContext(Dispatchers.Main) {
-                                    searchResults = results.map { mod ->
-                                        mod.copy(installed = mod.slug in installedModSlugs)
-                                    }
-                                    isLoading = false
-                                    statusMessage = if (results.isEmpty()) "Ничего не найдено" else ""
-                                }
-                            }
-                        }
-                    }
-                    .padding(horizontal = 18.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("\uD83D\uDD0D Поиск", fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
-            }
+            BullTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = "🔍 Поиск модов...",
+                modifier = Modifier.weight(1f),
+                colors = colors
+            )
         }
 
         if (statusMessage.isNotEmpty() && !isLoading) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(statusMessage, fontSize = 13.sp, color = Color(0xFF8B949E))
+            Text(statusMessage, fontSize = 13.sp, color = colors.textSecondary)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(horizontal = 2.dp)) {
+            items(categories.size) { index ->
+                val (catId, catLabel) = categories[index]
+                val isSelected = if (catId == "all") selectedCategory == null else selectedCategory == catId
+                BullChip(
+                    text = catLabel,
+                    selected = isSelected,
+                    onClick = { selectedCategory = if (catId == "all") null else catId },
+                    colors = colors
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        androidx.compose.foundation.lazy.LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            contentPadding = PaddingValues(horizontal = 2.dp)
-        ) {
-            items(categories.size) { index ->
-                val (catId, catLabel) = categories[index]
-                val isSelected = if (catId == "all") selectedCategory == null else selectedCategory == catId
-                Box(
-                    modifier = Modifier
-                        .height(32.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) primaryColor else Color(0xFF1C2128))
-                        .clickable {
-                            selectedCategory = if (catId == "all") null else catId
-                        }
-                        .padding(horizontal = 14.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        catLabel,
-                        fontSize = 12.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) Color.White else Color(0xFF8B949E)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Сортировка:", fontSize = 12.sp, color = Color(0xFF6E7681))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Сортировка:", fontSize = 12.sp, color = colors.textMuted)
             val sortOptions = listOf(
                 "relevance" to "По релевантности",
                 "downloads" to "По популярности",
                 "newest" to "По дате"
             )
             for ((sortId, sortLabel) in sortOptions) {
-                val isSelected = selectedSort == sortId
-                Box(
-                    modifier = Modifier
-                        .height(28.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (isSelected) primaryColor.copy(alpha = 0.2f) else Color(0xFF0D1117))
-                        .clickable {
-                            selectedSort = sortId
-                        }
-                        .padding(horizontal = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        sortLabel,
-                        fontSize = 11.sp,
-                        color = if (isSelected) primaryColor else Color(0xFF8B949E)
-                    )
-                }
+                BullChip(text = sortLabel, selected = selectedSort == sortId, onClick = { selectedSort = sortId }, colors = colors)
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (selectedMod != null) {
             ModDetailPanel(
                 mod = selectedMod!!,
-                primaryColor = primaryColor,
-                mcVersion = mcVersion,
+                colors = colors,
+                mcVersion = versionState.selectedVersion,
                 loader = loader,
                 modsDir = modsDir,
                 onBack = { selectedMod = null },
@@ -321,27 +226,85 @@ fun ModBrowserScreen(
                 }
             )
         } else if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(modifier = Modifier.size(32.dp), color = primaryColor, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(32.dp), color = colors.primary, strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(statusMessage, fontSize = 14.sp, color = Color(0xFF8B949E))
+                    Text(statusMessage, fontSize = 14.sp, color = colors.textSecondary)
                 }
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
+            LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(searchResults) { mod ->
                     ModListItem(
                         mod = mod,
-                        primaryColor = primaryColor,
+                        colors = colors,
                         isInstalled = mod.slug in installedModSlugs,
                         onClick = { selectedMod = mod }
+                    )
+                }
+            }
+        }
+    }
+
+    if (showVersionPicker) {
+        VersionPickerDialog(
+            versionState = versionState,
+            onDismiss = { showVersionPicker = false },
+            onSelect = { versionState.selectVersion(it) },
+            colors = colors
+        )
+    }
+}
+
+@Composable
+private fun ModListItem(mod: BrowserMod, colors: BullColors, isInstalled: Boolean, onClick: () -> Unit) {
+    BullCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = colors,
+        background = if (isInstalled) colors.primary.copy(alpha = 0.08f) else colors.surface,
+        hoverable = true,
+        onClick = onClick,
+        contentPadding = PaddingValues(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (mod.iconUrl != null) {
+                ModIcon(mod.iconUrl, mod.name, colors)
+                Spacer(modifier = Modifier.width(12.dp))
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        mod.name,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (isInstalled) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("✔", fontSize = 12.sp, color = colors.success)
+                    }
+                }
+                Text(
+                    mod.description,
+                    fontSize = 12.sp,
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+                Row(modifier = Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (mod.author.isNotEmpty()) {
+                        Text(mod.author, fontSize = 11.sp, color = colors.textMuted)
+                    }
+                    Text("${formatDownloads(mod.downloads)} загрузок", fontSize = 11.sp, color = colors.textMuted)
+                    Text(
+                        if (mod.source == ModSource.MODRINTH) "Modrinth" else "CurseForge",
+                        fontSize = 11.sp,
+                        color = if (mod.source == ModSource.MODRINTH) colors.success else colors.warning
                     )
                 }
             }
@@ -350,71 +313,9 @@ fun ModBrowserScreen(
 }
 
 @Composable
-private fun ModListItem(
-    mod: BrowserMod,
-    primaryColor: Color,
-    isInstalled: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(if (isInstalled) primaryColor.copy(alpha = 0.08f) else Color(0xFF161B22))
-            .clickable { onClick() }
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (mod.iconUrl != null) {
-            ModIcon(mod.iconUrl, mod.name)
-            Spacer(modifier = Modifier.width(12.dp))
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    mod.name,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFE6EDF3),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (isInstalled) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("\u2714", fontSize = 12.sp, color = Color(0xFF34D399))
-                }
-            }
-            Text(
-                mod.description,
-                fontSize = 12.sp,
-                color = Color(0xFF8B949E),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-            Row(
-                modifier = Modifier.padding(top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                if (mod.author.isNotEmpty()) {
-                    Text(mod.author, fontSize = 11.sp, color = Color(0xFF6E7681))
-                }
-                Text("${formatDownloads(mod.downloads)} загрузок", fontSize = 11.sp, color = Color(0xFF6E7681))
-                Text(
-                    if (mod.source == ModSource.MODRINTH) "Modrinth" else "CurseForge",
-                    fontSize = 11.sp,
-                    color = if (mod.source == ModSource.MODRINTH) Color(0xFF34D399) else Color(0xFFF97316)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun ModDetailPanel(
     mod: BrowserMod,
-    primaryColor: Color,
+    colors: BullColors,
     mcVersion: String,
     loader: LoaderType,
     modsDir: File,
@@ -425,78 +326,47 @@ private fun ModDetailPanel(
     var isDownloading by remember { mutableStateOf(false) }
     var downloadStatus by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(primaryColor.copy(alpha = 0.1f))
-                .clickable { onBack() }
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("\u2190", fontSize = 16.sp, color = primaryColor)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Назад к списку", fontSize = 14.sp, color = primaryColor)
-        }
-
+    Column(modifier = Modifier.fillMaxSize()) {
+        BullSecondaryButton(text = "← Назад к списку", onClick = onBack, colors = colors, accent = true)
         Spacer(modifier = Modifier.height(12.dp))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF161B22))
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (mod.iconUrl != null) {
-                ModIconLarge(mod.iconUrl, mod.name)
-                Spacer(modifier = Modifier.width(16.dp))
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(mod.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE6EDF3))
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (mod.author.isNotEmpty()) {
-                        Text("by ${mod.author}", fontSize = 13.sp, color = Color(0xFF8B949E))
-                    }
-                    Text("${formatDownloads(mod.downloads)} загрузок", fontSize = 13.sp, color = Color(0xFF8B949E))
-                    Text(
-                        if (mod.source == ModSource.MODRINTH) "Modrinth" else "CurseForge",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (mod.source == ModSource.MODRINTH) Color(0xFF34D399) else Color(0xFFF97316)
-                    )
+        BullCard(modifier = Modifier.fillMaxWidth(), colors = colors, contentPadding = PaddingValues(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (mod.iconUrl != null) {
+                    ModIconLarge(mod.iconUrl, mod.name, colors)
+                    Spacer(modifier = Modifier.width(16.dp))
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(mod.description, fontSize = 13.sp, color = Color(0xFFC9D1D9))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(mod.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (mod.author.isNotEmpty()) {
+                            Text("by ${mod.author}", fontSize = 13.sp, color = colors.textSecondary)
+                        }
+                        Text("${formatDownloads(mod.downloads)} загрузок", fontSize = 13.sp, color = colors.textSecondary)
+                        Text(
+                            if (mod.source == ModSource.MODRINTH) "Modrinth" else "CurseForge",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (mod.source == ModSource.MODRINTH) colors.success else colors.warning
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(mod.description, fontSize = 13.sp, color = colors.textPrimary)
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF161B22))
-                .padding(16.dp)
-                .weight(1f)
-        ) {
+        BullCard(modifier = Modifier.fillMaxWidth().weight(1f), colors = colors, contentPadding = PaddingValues(16.dp)) {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text("Описание", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B949E))
+                Text("Описание", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = colors.textSecondary)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     mod.body.ifEmpty { mod.description },
                     fontSize = 13.sp,
-                    color = Color(0xFFC9D1D9),
+                    color = colors.textPrimary,
                     lineHeight = 20.sp
                 )
             }
@@ -508,32 +378,26 @@ private fun ModDetailPanel(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFF34D399).copy(alpha = 0.15f))
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.success.copy(alpha = 0.15f))
                     .padding(14.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("\u2714 Уже установлен", fontSize = 15.sp, color = Color(0xFF34D399), fontWeight = FontWeight.SemiBold)
+                Text("✔ Уже установлен", fontSize = 15.sp, color = colors.success, fontWeight = FontWeight.SemiBold)
             }
         } else {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (isDownloading) Color(0xFF30363D) else primaryColor)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (isDownloading) colors.borderStrong else colors.primary)
                     .clickable(enabled = !isDownloading) {
                         isDownloading = true
                         downloadStatus = "Скачивание..."
                         scope.launch(Dispatchers.IO) {
                             val success = when (mod.source) {
-                                ModSource.MODRINTH -> {
-                                    val api = ModrinthApi()
-                                    api.downloadModById(mod.id, mcVersion, loader, modsDir)
-                                }
-                                ModSource.CURSEFORGE -> {
-                                    val api = CurseForgeApi()
-                                    api.downloadMod(mod.id, mcVersion, loader, modsDir)
-                                }
+                                ModSource.MODRINTH -> ModrinthApi().downloadModById(mod.id, mcVersion, loader, modsDir)
+                                ModSource.CURSEFORGE -> CurseForgeApi().downloadMod(mod.id, mcVersion, loader, modsDir)
                             }
                             withContext(Dispatchers.Main) {
                                 if (success) {
@@ -556,7 +420,7 @@ private fun ModDetailPanel(
                         Text(downloadStatus, fontSize = 15.sp, color = Color.White)
                     }
                 } else {
-                    Text("\u2B07 Установить", fontSize = 15.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("⬇ Установить", fontSize = 15.sp, color = colors.onPrimary, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -564,7 +428,7 @@ private fun ModDetailPanel(
 }
 
 @Composable
-private fun ModIcon(url: String, name: String) {
+private fun ModIcon(url: String, name: String, colors: BullColors) {
     var imageBytes by remember { mutableStateOf<ByteArray?>(null) }
     LaunchedEffect(url) {
         withContext(Dispatchers.IO) {
@@ -581,21 +445,21 @@ private fun ModIcon(url: String, name: String) {
         Image(
             bitmap = imageBitmap,
             contentDescription = name,
-            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
+            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(9.dp)),
             contentScale = ContentScale.Crop
         )
     } else {
         Box(
-            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFF30363D)),
+            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(9.dp)).background(colors.surfaceSunken),
             contentAlignment = Alignment.Center
         ) {
-            Text(name.take(1).uppercase(), fontSize = 16.sp, color = Color(0xFF8B949E))
+            Text(name.take(1).uppercase(), fontSize = 16.sp, color = colors.textSecondary)
         }
     }
 }
 
 @Composable
-private fun ModIconLarge(url: String, name: String) {
+private fun ModIconLarge(url: String, name: String, colors: BullColors) {
     var imageBytes by remember { mutableStateOf<ByteArray?>(null) }
     LaunchedEffect(url) {
         withContext(Dispatchers.IO) {
@@ -612,15 +476,15 @@ private fun ModIconLarge(url: String, name: String) {
         Image(
             bitmap = imageBitmap,
             contentDescription = name,
-            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)),
+            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(14.dp)),
             contentScale = ContentScale.Crop
         )
     } else {
         Box(
-            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF30363D)),
+            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(14.dp)).background(colors.surfaceSunken),
             contentAlignment = Alignment.Center
         ) {
-            Text(name.take(1).uppercase(), fontSize = 28.sp, color = Color(0xFF8B949E))
+            Text(name.take(1).uppercase(), fontSize = 28.sp, color = colors.textSecondary)
         }
     }
 }

@@ -1,6 +1,5 @@
 package net.bullmc.client.core.launcher
 
-import net.bullmc.client.core.anticheat.AntiCheatManager
 import net.bullmc.client.core.auth.Auth
 import net.bullmc.client.core.loader.LoaderManager
 import net.bullmc.client.core.loader.LoaderType
@@ -23,21 +22,10 @@ class Launcher {
         loaderVersion: String = "",
         enabledModIds: List<String> = emptyList(),
         gameDir: File,
-        onStatus: (String, Float) -> Unit,
-        antiCheatEnabled: Boolean = false
+        onStatus: (String, Float) -> Unit
     ): Process? {
         LauncherPaths.init()
         onStatus("Подготовка...", 0f)
-
-        val modsDir = File(gameDir, "mods").also { it.mkdirs() }
-        val antiCheat = AntiCheatManager(modsDir, gameDir)
-        antiCheat.enabled = antiCheatEnabled
-
-        val checkResult = antiCheat.checkBeforeLaunch(playerNick)
-        if (!checkResult.allowed) {
-            onStatus(checkResult.message, 0f)
-            return null
-        }
 
         val mcLauncher = MinecraftLauncher(gameDir, auth)
 
@@ -55,8 +43,7 @@ class Launcher {
             )
 
             onStatus("Запуск...", 1.0f)
-            val agentArg = antiCheat.buildAgentJvmArg()
-            mcLauncher.launch(actualVersionId, playerNick, javaPath, ramMb, serverIp, extraJvmArgs = listOfNotNull(agentArg))
+            mcLauncher.launch(actualVersionId, playerNick, javaPath, ramMb, serverIp)
         } catch (e: Exception) {
             LauncherPaths.writeErrorLog(e)
             onStatus("Ошибка: ${e.message}", 0f)
