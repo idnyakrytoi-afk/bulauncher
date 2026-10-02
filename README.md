@@ -1,85 +1,110 @@
-# BullMC Client Launcher
+# 👋 Привет! Я idnyakrytoi-afk — делаю BullMC Client Launcher
 
-Десктопный лаунчер для сервера BullMC.
+## 🧑‍💻 Обо мне
 
-## Возможности
+- 🎮 Разрабатываю собственный Minecraft-лаунчер для BullMC.
+- 🚀 Хочу сделать быстрый, красивый и удобный клиент с модами, сборками и нормальной диагностикой.
+- 🎬 YouTube: [@idnyakrytoi-afk](https://www.youtube.com/@idnyakrytoi-afk)
+- ⭐ Цель проекта — лаунчер, который не просто запускает игру, а помогает игроку чинить моды, краши и сборки.
 
-- **Microsoft Auth** — OAuth2 авторизация для серверов с проверкой
-- **Профили** — отдельные настройки лоадера/модов для каждого профиля
-- **Multi-instance** — несколько папок игры с разными модами
-- **Mod-лоадеры** — Fabric, Forge, NeoForge, Quilt с автоустановкой
-- **Fabric API** — скачивается автоматически
-- **Моды** — каталог из Modrinth, автообновление
-- **Сборки сообщества** — каталог готовых сборок от игроков: установка в один клик, публикация своей сборки, экспорт/импорт `.bullbuild`, общий индекс через GitHub
-- **Импорт модпаков** — поддержка MRPACK
-- **Анимации** — splash с прогрессом, каскадное появление списков, hover/press эффекты, пульсирующие статусы, анимированный прогресс загрузки, shimmer-заглушки
-- **Skin preview** — показывает скин по нику
-- **Crash reporter** — парсинг логов, диагностика крашей
-- **Server browser** — список серверов с пингом
-- **Discord Rich Presence** — статус в Discord
-- **7 тем** — GitHub Dark, Amethyst, Ice, Emerald, Rose, Ocean, Lavender
-- **Auto-download Java** — скачивает JDK 21 если не найдена
+## 💻 Технологический стек
 
-## Структура
+**Языки и платформа:**
 
-```
+![Kotlin](https://img.shields.io/badge/KOTLIN-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
+![Java](https://img.shields.io/badge/JAVA-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Gradle](https://img.shields.io/badge/GRADLE-02303A?style=for-the-badge&logo=gradle&logoColor=white)
+
+**Frontend / Desktop UI:**
+
+![Compose](https://img.shields.io/badge/COMPOSE_DESKTOP-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
+![Material](https://img.shields.io/badge/MATERIAL_UI-757575?style=for-the-badge&logo=materialdesign&logoColor=white)
+
+**Backend и интеграции:**
+
+![Ktor](https://img.shields.io/badge/KTOR-087CFA?style=for-the-badge&logo=kotlin&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLITE-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![Microsoft](https://img.shields.io/badge/MICROSOFT_AUTH-5E5E5E?style=for-the-badge&logo=microsoft&logoColor=white)
+![Discord](https://img.shields.io/badge/DISCORD_RPC-5865F2?style=for-the-badge&logo=discord&logoColor=white)
+
+**Инструменты:**
+
+![Git](https://img.shields.io/badge/GIT-F05032?style=for-the-badge&logo=git&logoColor=white)
+![GitHub](https://img.shields.io/badge/GITHUB-181717?style=for-the-badge&logo=github&logoColor=white)
+![Windows](https://img.shields.io/badge/WINDOWS-0078D4?style=for-the-badge&logo=windows&logoColor=white)
+
+## 📁 Портфолио
+
+- 🐂 **BullMC Client Launcher** — десктопный лаунчер для Minecraft-сервера BullMC.
+- 📦 **Community Builds** — каталог готовых сборок от игроков с установкой в один клик.
+- 🧩 **Mod Browser** — поиск и установка модов из Modrinth / CurseForge.
+- 🛠️ **Crash Reporter** — анализ логов и подсказки по ошибкам запуска.
+- 🎨 **Theme System** — набор тем, анимации, splash screen и кастомные UI-компоненты.
+
+## 🔗 Проект
+
+BullMC Client Launcher — это лаунчер, который объединяет авторизацию, профили, моды, сборки и запуск Minecraft в одном приложении.
+
+**Возможности:**
+
+- **Microsoft Auth** — OAuth2-авторизация для лицензионных аккаунтов.
+- **Профили** — отдельные настройки версии, RAM, модов и папки игры.
+- **Multi-instance** — разные игровые директории под разные сборки.
+- **Mod-лоадеры** — Fabric, Forge, NeoForge, Quilt с автоустановкой.
+- **Моды** — каталог Modrinth, CurseForge, автообновление и импорт MRPACK.
+- **Сборки сообщества** — установка, экспорт и импорт `.bullbuild`.
+- **Skin preview** — предпросмотр скина по нику.
+- **Crash reporter** — диагностика крашей и подсказки по решению.
+- **Server browser** — список серверов и ping.
+- **Discord Rich Presence** — статус игры в Discord.
+- **Темы и анимации** — GitHub Dark, Amethyst, Ice, Emerald, Rose, Ocean, Lavender.
+- **Auto-download Java** — автоматическая загрузка JDK, если Java не найдена.
+
+## 🧱 Структура
+
+```text
 src/main/kotlin/net/bullmc/client/
 ├── Main.kt
-├── Animation.kt        — переиспользуемые анимации (переходы, hover, пульс, shimmer)
-├── FileUtils.kt
+├── Animation.kt
 ├── api/ServerApi.kt
 ├── core/
 │   ├── auth/        — Auth, MicrosoftAuth
 │   ├── builds/      — CommunityBuild, BuildsRepository, BuildInstaller
 │   ├── launcher/    — Launcher, MinecraftDownloader, MinecraftLauncher
 │   ├── loader/      — LoaderManager, LoaderTypes
-│   ├── mod/         — ModrinthApi, ModDownloader, ModSettings, ModpackImporter
+│   ├── mod/         — ModrinthApi, ModDownloader, ModpackImporter
 │   ├── profile/     — Profile, InstanceManager
-│   └── util/        — LauncherPaths, JavaDownloader, SkinFetcher, ServerPing,
-│                       CrashAnalyzer, DiscordRPC, CacheManager, JreDetector
-├── db/DatabaseManager.kt
+│   └── util/        — JavaDownloader, CrashAnalyzer, DiscordRPC, ServerPing
 ├── theme/Theme.kt
 └── ui/
-    ├── component/   — Sidebar, TopBanner, FriendsPanel, BottomCards, SkinPreview
-    └── screen/      — BuildsScreen, LoaderScreen, SettingsScreen, LogScreen,
-                        ModSettingsScreen, AuthScreen, ServerBrowserScreen
+    ├── component/   — Sidebar, TopBanner, FriendsPanel, SkinPreview
+    └── screen/      — BuildsScreen, LoaderScreen, SettingsScreen, LogScreen
 ```
 
-## Сборки сообщества
-
-Экран **Builds** в сайдбаре:
-
-- **Каталог** — встроенные сборки + сборки из общего индекса
-  (`https://raw.githubusercontent.com/idnyakrytoi-afk/bulauncher/main/builds.json`).
-- **Установка** — создаёт профиль с нужной версией/лоадером и докачивает моды из Modrinth.
-- **Публикация** — кнопка «+ Опубликовать» сохраняет текущий профиль как сборку
-  (в `~/.bullmc-client/builds.json`).
-- **Шеринг** — «Экспорт» создаёт файл `.bullbuild`; другой игрок импортирует его
-  через `BuildsRepository.importFromFile` (или файл добавляется в общий индекс PR-ом).
-
-## Запуск
+## ⚙️ Запуск
 
 ```bash
 ./gradlew run
 ```
 
-## Сборка .exe
+## 📦 Сборка релиза
 
 ```powershell
 ./build_launcher.ps1
 ```
 
-или вручную:
+После сборки готовые файлы лежат в:
 
-```bash
-./gradlew createDistributable
+```text
+build/release/
+├── bullmc-client-0.1.1.jar
+├── BullMCClient-0.1.1.exe
+├── BullMCClient-0.1.1.msi
+└── BullMCClient-portable-*.zip
 ```
 
-Готовый лаунчер: `build/compose/binaries/main/app/BullMCClient/BullMCClient.exe`
-(распространяется всей папкой `BullMCClient` — внутри портативный runtime, Java не нужна).
+## 📌 Другие ссылки
 
-Установщик `.exe`/`.msi` (требует WiX, скачивается автоматически):
-
-```bash
-./gradlew packageExe
-```
+- 🔥 GitHub Releases: [скачать последнюю версию](https://github.com/idnyakrytoi-afk/bulauncher/releases)
+- 🎬 YouTube: [@idnyakrytoi-afk](https://www.youtube.com/@idnyakrytoi-afk)
+- 🐙 GitHub: [idnyakrytoi-afk](https://github.com/idnyakrytoi-afk)
