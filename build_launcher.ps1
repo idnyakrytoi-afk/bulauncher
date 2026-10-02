@@ -175,6 +175,23 @@ try {
         foreach ($installer in $installers) {
             Copy-Item -LiteralPath $installer.FullName -Destination $releaseDir -Force
         }
+
+        $nsis = @(
+            "C:\Program Files (x86)\NSIS\makensis.exe",
+            "C:\Program Files\NSIS\makensis.exe"
+        ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+
+        if ($nsis) {
+            Write-Status "Сборка кастомного BullCraft installer..." -ForegroundColor Yellow
+            Push-Location "installer"
+            try {
+                & $nsis ".\BullCraftInstaller.nsi" | Out-Null
+            } finally {
+                Pop-Location
+            }
+        } else {
+            Write-Status "NSIS не найден: BullCraft-Installer не собран. Установите NSIS.NSIS через winget." -ForegroundColor Yellow
+        }
         
         Write-Host ""
         Write-Status "Готовые артефакты релиза:" -ForegroundColor Cyan
