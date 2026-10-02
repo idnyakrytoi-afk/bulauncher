@@ -5,7 +5,7 @@
 
 !define APP_NAME "BullMC Client"
 !define APP_EXE "BullMCClient.exe"
-!define APP_VERSION "0.1.1"
+!define APP_VERSION "0.1.2"
 !define APP_SOURCE "..\build\compose\binaries\main\app\BullMCClient"
 !define COMPANY_NAME "BullMC"
 !define REG_KEY "Software\BullMC\BullMCClient"

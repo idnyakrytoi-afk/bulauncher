@@ -33,25 +33,16 @@ fun BottomCards(
         modifier = Modifier.fillMaxWidth().height(220.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        AnimatedEntry(index = 0, modifier = Modifier.weight(1.25f)) {
+        AnimatedEntry(index = 0, modifier = Modifier.weight(1f)) {
             NewsCard(modifier = Modifier.fillMaxSize(), news = news, colors = colors)
         }
 
         AnimatedEntry(index = 1, modifier = Modifier.weight(1f)) {
             ServerCard(
                 modifier = Modifier.fillMaxSize(),
-                label = "Основной",
-                ip = "play.bullmc.net",
-                status = serverStatuses["play.bullmc.net"],
-                colors = colors
-            )
-        }
-        AnimatedEntry(index = 2, modifier = Modifier.weight(1f)) {
-            ServerCard(
-                modifier = Modifier.fillMaxSize(),
-                label = "Дополнительный",
-                ip = "yt.bullmc.net",
-                status = serverStatuses["yt.bullmc.net"],
+                label = "BullCraft",
+                ip = "hot.bullmc.net",
+                status = serverStatuses["hot.bullmc.net"],
                 colors = colors
             )
         }
@@ -123,7 +114,16 @@ private fun ServerCard(
                 Text(status.motd, fontSize = 14.sp, color = colors.textSecondary, maxLines = 2)
             }
         } else {
-            Text(if (status == null) "Проверяем..." else "Недоступен", fontSize = 15.sp, color = if (status == null) colors.textSecondary else colors.error, fontWeight = FontWeight.SemiBold)
+            Text(
+                when {
+                    status == null -> "Проверяем..."
+                    !status.checked -> "Не удалось проверить"
+                    else -> "Недоступен"
+                },
+                fontSize = 15.sp,
+                color = if (status == null || !status.checked) colors.textSecondary else colors.error,
+                fontWeight = FontWeight.SemiBold
+            )
             Spacer(modifier = Modifier.height(5.dp))
             Text(ip, fontSize = 14.sp, color = colors.textSecondary)
         }

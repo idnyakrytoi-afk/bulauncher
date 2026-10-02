@@ -20,27 +20,32 @@ import java.net.URI
 private const val RATING_URL = "https://millida.net/rating/servers/bullcraft"
 
 @Composable
-fun FriendsPanel(serverStatus: ServerStatus?) {
+fun FriendsPanel(serverStatus: ServerStatus?, onAddServer: () -> Unit) {
     val colors = LocalBullColors.current
     BullCard(modifier = Modifier.width(252.dp).fillMaxHeight().padding(start = 4.dp), contentPadding = PaddingValues(20.dp)) {
-        Text("BullCraft", fontSize = 23.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("BullCraft", fontSize = 23.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+            BullSecondaryButton(text = "+", onClick = onAddServer, height = 34.dp, accent = true)
+        }
         Spacer(Modifier.height(5.dp))
         Text("Анархия и приключения", fontSize = 14.sp, color = colors.textSecondary)
         Spacer(Modifier.height(24.dp))
         Text("СЕРВЕР", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.textSecondary)
         Spacer(Modifier.height(10.dp))
-        Text("play.bullmc.net", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = colors.textPrimary)
+        Text("hot.bullmc.net", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = colors.textPrimary)
         Spacer(Modifier.height(12.dp))
         val online = serverStatus?.online == true
         Text(
             when {
                 serverStatus == null -> "Проверяем доступность..."
+                !serverStatus.checked -> "Не удалось проверить"
                 online -> "Онлайн · ${serverStatus.playersOnline}/${serverStatus.playersMax} игроков"
                 else -> "Сейчас недоступен"
             },
             fontSize = 14.sp,
             color = when {
                 serverStatus == null -> colors.textSecondary
+                !serverStatus.checked -> colors.textSecondary
                 online -> colors.success
                 else -> colors.error
             }

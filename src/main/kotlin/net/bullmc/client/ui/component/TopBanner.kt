@@ -132,7 +132,7 @@ fun TopBanner(
                     letterSpacing = 1.sp
                 )
 
-                val mainServer = serverStatuses["play.bullmc.net"]
+                val mainServer = serverStatuses["hot.bullmc.net"]
                 Spacer(modifier = Modifier.height(14.dp))
                 if (mainServer != null && mainServer.online) {
                     Row(
@@ -161,7 +161,14 @@ fun TopBanner(
                     ) {
                         Box(modifier = Modifier.size(9.dp).clip(RoundedCornerShape(5.dp)).background(colors.error))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(if (mainServer == null) "Проверяем сервер..." else "Сервер недоступен", fontSize = 15.sp, color = colors.textSecondary)
+                        Text(
+                            when {
+                                mainServer == null -> "Проверяем сервер..."
+                                !mainServer.checked -> "Не удалось проверить сервер"
+                                else -> "Сервер недоступен"
+                            },
+                            fontSize = 15.sp, color = colors.textSecondary
+                        )
                     }
                 }
 

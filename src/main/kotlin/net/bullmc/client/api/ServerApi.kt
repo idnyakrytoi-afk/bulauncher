@@ -10,6 +10,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.withTimeout
 import net.bullmc.client.core.util.LauncherPaths
 import java.io.File
 
@@ -17,18 +18,18 @@ import java.io.File
 data class NewsItem(val title: String, val content: String, val date: String)
 
 @Serializable
-data class McSrvStatResponse(
+data class McStatusResponse(
     val online: Boolean = false,
-    val players: McSrvPlayers? = null,
-    val version: String? = null,
-    val motd: McSrvMotd? = null
+    val players: McStatusPlayers? = null,
+    val version: McStatusText? = null,
+    val motd: McStatusText? = null
 )
 
 @Serializable
-data class McSrvPlayers(val online: Int = 0, val max: Int = 0)
+data class McStatusPlayers(val online: Int = 0, val max: Int = 0)
 
 @Serializable
-data class McSrvMotd(val clean: List<String> = emptyList())
+data class McStatusText(val name_clean: String = "", val clean: String = "")
 
 @Serializable
 data class ServerStatus(
@@ -37,7 +38,8 @@ data class ServerStatus(
     val playersOnline: Int,
     val playersMax: Int,
     val version: String,
-    val motd: String
+    val motd: String,
+    val checked: Boolean = true
 )
 
 object ServerApi {
@@ -96,19 +98,23 @@ object ServerApi {
 
     suspend fun getServerStatus(ip: String): ServerStatus {
         return try {
-            val response = client.get("https://api.mcsrvstat.us/2/$ip").bodyAsText()
-            val parsed = json.decodeFromString<McSrvStatResponse>(response)
+            val response = withTimeout(10_000) {
+                client.get("https://api.mcstatus.io/v2/status/java/$ip").bodyAsText()
+            }
+            val parsed = json.decodeFromString<McStatusResponse>(response)
             ServerStatus(
                 ip = ip,
                 online = parsed.online,
                 playersOnline = parsed.players?.online ?: 0,
                 playersMax = parsed.players?.max ?: 0,
-                version = parsed.version ?: "?",
-                motd = parsed.motd?.clean?.joinToString(" ") ?: ""
+                version = parsed.version?.name_clean?.let {
+                    Regex("\\d+\\.\\d+(?:\\.\\d+)?(?:[-–]\\d+\\.\\d+(?:\\.\\d+)?)?").find(it)?.value
+                } ?: "?",
+                motd = parsed.motd?.clean ?: ""
             )
         } catch (e: Exception) {
             println("[API] Ошибка статуса $ip: ${e.message}")
-            ServerStatus(ip, false, 0, 0, "?", "")
+            ServerStatus(ip, false, 0, 0, "?", "", checked = false)
         }
     }
 

@@ -36,6 +36,7 @@ import androidx.compose.ui.window.rememberWindowState
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import net.bullmc.client.api.NewsItem
 import net.bullmc.client.api.ServerApi
 import net.bullmc.client.api.ServerStatus
@@ -145,7 +146,7 @@ fun main() = application {
 
     var serverStatuses by remember { mutableStateOf<Map<String, ServerStatus>>(emptyMap()) }
 
-    val serverIps = listOf("play.bullmc.net", "yt.bullmc.net")
+    val serverIps = listOf("hot.bullmc.net")
 
     var selectedLoader by remember { mutableStateOf(net.bullmc.client.core.loader.LoaderType.VANILLA) }
     var selectedLoaderVersion by remember { mutableStateOf("") }
@@ -189,11 +190,6 @@ fun main() = application {
             gameDir = activeProfile.getGameDir().absolutePath
             modsDir = activeProfile.getModsDir().absolutePath
 
-            serverIps.forEach { ip ->
-                val status = ServerApi.getServerStatus(ip)
-                serverStatuses = serverStatuses + (ip to status)
-            }
-
             // Auto-check mod updates
             val modsDirFile = File(modsDir)
             if (modsDirFile.exists() && modsDirFile.listFiles()?.isNotEmpty() == true) {
@@ -210,6 +206,15 @@ fun main() = application {
 
             // Set Discord idle
             try { DiscordManager.setIdle() } catch (_: Exception) {}
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            serverIps.forEach { ip ->
+                serverStatuses = serverStatuses + (ip to ServerApi.getServerStatus(ip))
+            }
+            delay(60_000)
         }
     }
 
@@ -542,7 +547,7 @@ fun main() = application {
                                                     LogScreen(logLines = logLines, isGameRunning = isGameRunning, primaryColor = ThemeManager.getPrimaryColor(currentTheme), currentTheme = currentTheme)
                                                 }
                                                 "SERVERS" -> {
-                                                    val defaultServers = listOf("play.bullmc.net", "yt.bullmc.net")
+                                                    val defaultServers = listOf("hot.bullmc.net")
                                                     var savedServerList by remember {
                                                         val loaded = auth.getSavedServers().ifEmpty { defaultServers }
                                                         if (loaded != auth.getSavedServers()) auth.saveServers(loaded)
@@ -572,7 +577,7 @@ fun main() = application {
                                 }
 
                                 SidePanelVisibility(visible = currentScreen == "HOME") {
-                                    FriendsPanel(serverStatus = serverStatuses["play.bullmc.net"])
+                                    FriendsPanel(serverStatus = serverStatuses["hot.bullmc.net"], onAddServer = { currentScreen = "SERVERS" })
                                 }
                             }
                         }

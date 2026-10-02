@@ -284,7 +284,7 @@ fun SettingsScreen(
             BullTextField(
                 value = serverInput,
                 onValueChange = { serverInput = it },
-                placeholder = "play.bullmc.net",
+                placeholder = "hot.bullmc.net",
                 modifier = Modifier.fillMaxWidth(),
                 colors = colors
             )

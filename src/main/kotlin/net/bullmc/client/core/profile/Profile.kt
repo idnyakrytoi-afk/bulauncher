@@ -15,7 +15,7 @@ data class GameProfile(
     var loaderType: LoaderType = LoaderType.VANILLA,
     var loaderVersion: String = "",
     var enabledMods: List<String> = emptyList(),
-    var serverIp: String = "play.bullmc.net",
+    var serverIp: String = "hot.bullmc.net",
     var ramMb: Int = 4096,
     var gameDir: String = "",
     var createdAt: Long = System.currentTimeMillis()

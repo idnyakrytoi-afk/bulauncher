@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "net.bullmc"
-version = "0.1.1"
+version = "0.1.2"
 
 repositories {
     mavenCentral()
@@ -39,7 +39,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.AppImage, TargetFormat.Exe, TargetFormat.Msi)
             packageName = "BullMCClient"
-            packageVersion = "0.1.1"
+            packageVersion = "0.1.2"
             description = "BullMC Client Launcher"
             vendor = "BullCraft"
 

@@ -85,7 +85,8 @@ class Auth {
     }
 
     fun getDefaultServer(): String {
-        return readLines().find { it.startsWith("defaultServer=") }?.substringAfter("defaultServer=") ?: "play.bullmc.net"
+        val saved = readLines().find { it.startsWith("defaultServer=") }?.substringAfter("defaultServer=")
+        return if (saved.isNullOrBlank() || saved == "play.bullmc.net") "hot.bullmc.net" else saved
     }
 
     fun saveLoaderProfile(mcVersion: String, loader: LoaderType, loaderVersion: String, enabledMods: List<String>) {
@@ -106,7 +107,9 @@ class Auth {
 
     fun getSavedServers(): List<String> {
         val servers = readLines().find { it.startsWith("servers=") }?.substringAfter("servers=") ?: ""
-        return if (servers.isEmpty()) listOf("play.bullmc.net", "yt.bullmc.net") else servers.split("|")
+        return if (servers.isEmpty() || servers == "play.bullmc.net|yt.bullmc.net") {
+            listOf("hot.bullmc.net")
+        } else servers.split("|")
     }
 
     fun saveServers(servers: List<String>) {
