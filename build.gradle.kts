@@ -41,7 +41,16 @@ compose.desktop {
             packageName = "BullMCClient"
             packageVersion = "0.1.1"
             description = "BullMC Client Launcher"
-            vendor = "BullMC"
+            vendor = "BullCraft"
+
+            windows {
+                iconFile.set(project.file("src/main/resources/bull.ico"))
+                menuGroup = "BullCraft"
+                shortcut = true
+                dirChooser = true
+                perUserInstall = true
+                upgradeUuid = "8f6adbe0-3d7f-48a2-bf1b-9ec7a25f4471"
+            }
         }
     }
 }
