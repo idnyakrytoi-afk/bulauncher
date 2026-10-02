@@ -7,18 +7,18 @@
 !define APP_EXE "BullMCClient.exe"
 !define APP_VERSION "0.1.1"
 !define APP_SOURCE "..\build\compose\binaries\main\app\BullMCClient"
-!define COMPANY_NAME "BullCraft"
-!define REG_KEY "Software\BullCraft\BullMCClient"
+!define COMPANY_NAME "BullMC"
+!define REG_KEY "Software\BullMC\BullMCClient"
 
 Name "${APP_NAME}"
 Caption "Установка ${APP_NAME}"
-OutFile "..\build\release\BullCraft-Installer-${APP_VERSION}.exe"
-InstallDir "$LOCALAPPDATA\BullMCClient"
-InstallDirRegKey HKCU "${REG_KEY}" "InstallDir"
-RequestExecutionLevel user
+OutFile "..\build\release\BullMC-Client-Setup-${APP_VERSION}.exe"
+InstallDir "$PROGRAMFILES64\BullMC\BullMC Client"
+InstallDirRegKey HKLM "${REG_KEY}" "InstallDir"
+RequestExecutionLevel admin
 Icon "..\src\main\resources\bull.ico"
 UninstallIcon "..\src\main\resources\bull.ico"
-BrandingText "BullCraft Installer"
+BrandingText "BullMC Client Installer"
 XPStyle on
 ShowInstDetails show
 ShowUninstDetails show
@@ -30,8 +30,7 @@ ShowUninstDetails show
 !define MUI_HEADERIMAGE_RIGHT
 !define MUI_HEADERIMAGE_BITMAP "assets\header.bmp"
 !define MUI_HEADERIMAGE_UNBITMAP "assets\header.bmp"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "assets\welcome.bmp"
-!define MUI_UNWELCOMEFINISHPAGE_BITMAP "assets\welcome.bmp"
+!define MUI_COMPONENTSPAGE_NODESC
 !define MUI_FINISHPAGE_RUN "$INSTDIR\${APP_EXE}"
 !define MUI_FINISHPAGE_RUN_TEXT "Запустить BullMC Client после установки"
 !define MUI_FINISHPAGE_LINK "Открыть страницу проекта на GitHub"
@@ -48,17 +47,13 @@ ShowUninstDetails show
 
 !insertmacro MUI_LANGUAGE "Russian"
 
-LangString DESC_SecMain ${LANG_RUSSIAN} "Основные файлы BullMC Client. Этот компонент обязателен."
-LangString DESC_SecDesktopShortcut ${LANG_RUSSIAN} "Создать ярлык BullMC Client на рабочем столе."
-LangString DESC_SecStartMenu ${LANG_RUSSIAN} "Добавить ярлыки BullMC Client и удаления в меню Пуск."
-
 Section "BullMC Client" SecMain
     SectionIn RO
 
     SetOutPath "$INSTDIR"
     File /r "${APP_SOURCE}\*"
 
-    WriteRegStr HKCU "${REG_KEY}" "InstallDir" "$INSTDIR"
+    WriteRegStr HKLM "${REG_KEY}" "InstallDir" "$INSTDIR"
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 SectionEnd
 
@@ -72,12 +67,6 @@ Section "Добавить в меню Пуск" SecStartMenu
     CreateShortcut "$SMPROGRAMS\${COMPANY_NAME}\Удалить BullMC Client.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
 SectionEnd
 
-!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecMain} $(DESC_SecMain)
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktopShortcut} $(DESC_SecDesktopShortcut)
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecStartMenu} $(DESC_SecStartMenu)
-!insertmacro MUI_FUNCTION_DESCRIPTION_END
-
 Section "Uninstall"
     Delete "$DESKTOP\BullMC Client.lnk"
     Delete "$SMPROGRAMS\${COMPANY_NAME}\BullMC Client.lnk"
@@ -86,5 +75,5 @@ Section "Uninstall"
 
     Delete "$INSTDIR\Uninstall.exe"
     RMDir /r "$INSTDIR"
-    DeleteRegKey HKCU "${REG_KEY}"
+    DeleteRegKey HKLM "${REG_KEY}"
 SectionEnd
