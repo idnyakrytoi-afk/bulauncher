@@ -122,6 +122,7 @@ class MinecraftDownloader(
     private val assetsDir = File(gameDir, "assets")
 
     private val client = HttpClient(CIO) {
+        expectSuccess = true
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true; isLenient = true })
         }
@@ -167,10 +168,12 @@ class MinecraftDownloader(
 
         val versionJson = json.decodeFromString<VersionJson>(versionJsonFile.readText())
 
-        if (!clientJar.exists()) {
+        if (!isFileValid(clientJar, versionJson.downloads.client.size, versionJson.downloads.client.sha1)) {
             onProgress("Скачивание клиента...", 0.2f)
             downloadFile(versionJson.downloads.client.url, clientJar, versionJson.downloads.client.size, 0.2f, 0.5f)
         }
+
+        check(isFileValid(clientJar, versionJson.downloads.client.size, versionJson.downloads.client.sha1)) { "Downloaded client failed verification" }
 
         onProgress("Скачивание библиотек...", 0.5f)
         downloadLibraries(versionJson.libraries, 0.5f, 0.8f)
@@ -277,11 +280,12 @@ class MinecraftDownloader(
                             val response = client.get(url)
                             val bytes = response.readBytes()
                             dest.parentFile?.mkdirs()
+                            require(bytes.size.toLong() == size) { "Incorrect download size: $url" }
                             dest.writeBytes(bytes)
                             val done = completed.incrementAndGet()
                             onProgress("", progressStart + (progressEnd - progressStart) * (done.toFloat() / total))
                         } catch (e: Exception) {
-                            println("[DL] Ошибка библиотеки $url: ${e.message}")
+                            throw e
                         }
                     }
                 }.awaitAll()
@@ -323,20 +327,22 @@ class MinecraftDownloader(
 
         coroutineScope {
             toDownload.chunked(16).forEach { batch ->
-                batch.map { (url, dest, _) ->
+                batch.map { (url, dest, size) ->
                     async {
                         try {
                             val response = client.get(url)
                             val bytes = response.readBytes()
                             dest.parentFile?.mkdirs()
+                            require(bytes.size.toLong() == size) { "Incorrect download size: $url" }
                             dest.writeBytes(bytes)
+                            check(isFileValid(dest, size, dest.name)) { "Asset failed verification: $url" }
                             val done = completed.incrementAndGet()
                             if (done % 50 == 0 || done == total) {
                                 println("[DL] Ассеты: $done/$total")
                             }
                             onProgress("", progressStart + (progressEnd - progressStart) * (done.toFloat() / total))
                         } catch (e: Exception) {
-                            println("[DL] Ошибка ассета $url: ${e.message}")
+                            throw e
                         }
                     }
                 }.awaitAll()

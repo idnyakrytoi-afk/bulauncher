@@ -4,8 +4,7 @@ import net.bullmc.client.core.util.LauncherPaths
 import net.bullmc.client.core.loader.LoaderType
 import java.io.File
 
-class Auth {
-    private val credentialsFile: File = LauncherPaths.credentials
+class Auth(private val credentialsFile: File = LauncherPaths.credentials) {
 
     init {
         LauncherPaths.init()
@@ -99,7 +98,7 @@ class Auth {
     fun getLoaderProfile(mcVersion: String, loader: LoaderType): Pair<String, List<String>> {
         val key = "$mcVersion:${loader.name}"
         val lines = readLines()
-        val version = lines.find { it == "loaderProfile:$key:version=" }?.substringAfter("=") ?: ""
+        val version = lines.find { it.startsWith("loaderProfile:$key:version=") }?.substringAfter("=") ?: ""
         val modsLine = lines.find { it.startsWith("loaderProfile:$key:mods=") }?.substringAfter("=") ?: ""
         val mods = if (modsLine.isEmpty()) emptyList() else modsLine.split("|")
         return version to mods
