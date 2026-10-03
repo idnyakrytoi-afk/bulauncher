@@ -10,6 +10,8 @@ import kotlinx.serialization.json.*
 import net.bullmc.client.core.loader.LoaderType
 import net.bullmc.client.core.util.LauncherPaths
 import java.io.File
+import net.bullmc.client.core.util.safeDestination
+import kotlinx.coroutines.CancellationException
 import java.util.zip.ZipFile
 
 @Serializable
@@ -39,6 +41,7 @@ data class MrpackHashes(
 
 object ModpackImporter {
     private val client = HttpClient(CIO) {
+        expectSuccess = true
         install(HttpTimeout) {
             requestTimeoutMillis = 120_000
             connectTimeoutMillis = 15_000
@@ -67,7 +70,7 @@ object ModpackImporter {
                 zip.entries().asSequence().forEach { entry ->
                     if (entry.name.startsWith("overrides/") && !entry.isDirectory) {
                         val relativePath = entry.name.removePrefix("overrides/")
-                        val outFile = File(gameDir, relativePath)
+                        val outFile = safeDestination(gameDir, relativePath)
                         outFile.parentFile?.mkdirs()
                         zip.getInputStream(entry).use { input ->
                             outFile.outputStream().use { output ->
@@ -78,7 +81,7 @@ object ModpackImporter {
                 }
             }
         } catch (e: Exception) {
-            println("[MODPACK] Failed to extract overrides: ${e.message}")
+            throw IllegalStateException("Failed to extract overrides", e)
         }
     }
 
@@ -92,8 +95,9 @@ object ModpackImporter {
         if (total == 0) return
 
         for ((index, file) in manifest.files.withIndex()) {
-            val downloadUrl = file.downloads.firstOrNull() ?: continue
-            val outFile = File(modsDir, file.path.removePrefix("mods/"))
+            val downloadUrl = file.downloads.firstOrNull()
+                ?: throw IllegalArgumentException("No download URL for ${file.path}")
+            val outFile = safeDestination(modsDir, file.path.removePrefix("mods/"))
             outFile.parentFile?.mkdirs()
 
             if (outFile.exists() && outFile.length() == file.fileSize) continue
@@ -103,10 +107,13 @@ object ModpackImporter {
             try {
                 val response = client.get(downloadUrl)
                 val bytes = response.readBytes()
+                require(bytes.size.toLong() == file.fileSize) { "Incorrect size for ${file.path}" }
                 outFile.writeBytes(bytes)
                 println("[MODPACK] Downloaded: ${file.path}")
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                println("[MODPACK] Failed to download ${file.path}: ${e.message}")
+                throw IllegalStateException("Failed to download ${file.path}", e)
             }
         }
         onProgress("Готово", 1.0f)

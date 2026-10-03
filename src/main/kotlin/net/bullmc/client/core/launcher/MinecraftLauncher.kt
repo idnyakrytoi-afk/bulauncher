@@ -3,6 +3,7 @@ package net.bullmc.client.core.launcher
 import net.bullmc.client.core.auth.Auth
 import kotlinx.serialization.json.*
 import java.io.File
+import net.bullmc.client.core.util.safeDestination
 import java.net.URL
 
 class MinecraftLauncher(
@@ -330,7 +331,7 @@ class MinecraftLauncher(
                     java.util.zip.ZipFile(jarFile).use { zip ->
                         zip.entries().asSequence().forEach { entry ->
                             if (!entry.isDirectory && !entry.name.startsWith("META-INF")) {
-                                val outFile = File(nativesDir, entry.name)
+                                val outFile = safeDestination(nativesDir, entry.name)
                                 outFile.parentFile?.mkdirs()
                                 zip.getInputStream(entry).use { input ->
                                     outFile.outputStream().use { output ->
@@ -340,7 +341,9 @@ class MinecraftLauncher(
                             }
                         }
                     }
-                } catch (e: Exception) {}
+                } catch (e: Exception) {
+                    throw IllegalStateException("Native extraction failed: ${jarFile.name}", e)
+                }
             }
         }
 
@@ -380,7 +383,9 @@ class MinecraftLauncher(
                             URL(dlUrl).openStream().use { input ->
                                 jarFile.outputStream().use { output -> input.copyTo(output) }
                             }
-                        } catch (e: Exception) {}
+                        } catch (e: Exception) {
+                    throw IllegalStateException("Native extraction failed: ${jarFile.name}", e)
+                }
                     }
                     if (jarFile.exists()) classpathList.add(jarFile.absolutePath)
                 }

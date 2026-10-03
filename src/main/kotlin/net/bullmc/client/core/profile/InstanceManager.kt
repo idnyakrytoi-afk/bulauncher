@@ -54,7 +54,8 @@ object InstanceManager {
             try {
                 instances = json.decodeFromString<List<GameInstance>>(instancesFile.readText()).toMutableList()
                 if (instances.isNotEmpty()) {
-                    activeInstanceId = instances.first { it.isActive }.id
+                    activeInstanceId = (instances.firstOrNull { it.isActive } ?: instances.first()).id
+                    instances.forEach { it.isActive = it.id == activeInstanceId }
                 }
             } catch (e: Exception) {
                 println("[INSTANCE] Error loading: ${e.message}")
@@ -64,6 +65,8 @@ object InstanceManager {
         } else {
             createDefault()
         }
+
+        if (instances.isEmpty()) createDefault()
 
         instances.forEach {
             it.getGameDir().mkdirs()
@@ -88,6 +91,7 @@ object InstanceManager {
     }
 
     fun setActiveInstance(id: String) {
+        if (instances.none { it.id == id }) return
         instances.forEach { it.isActive = (it.id == id) }
         activeInstanceId = id
         save()
@@ -131,16 +135,19 @@ object InstanceManager {
             val modsDir = File(sourceDir, "mods")
             if (modsDir.exists()) {
                 val targetMods = copy.getModsDir()
-                modsDir.listFiles()?.forEach { it.copyTo(File(targetMods, it.name), overwrite = true) }
+                check(modsDir.copyRecursively(targetMods, overwrite = true)) { "Failed to copy mods" }
             }
 
             val versionsDir = File(sourceDir, "versions")
             if (versionsDir.exists()) {
                 val targetVersions = copy.getVersionsDir()
-                versionsDir.listFiles()?.forEach { it.copyTo(File(targetVersions, it.name), overwrite = true) }
+                check(versionsDir.copyRecursively(targetVersions, overwrite = true)) { "Failed to copy versions" }
             }
         } catch (e: Exception) {
-            println("[INSTANCE] Copy error: ${e.message}")
+            copy.getGameDir().deleteRecursively()
+            instances.remove(copy)
+            save()
+            throw IllegalStateException("Instance copy failed", e)
         }
 
         return copy

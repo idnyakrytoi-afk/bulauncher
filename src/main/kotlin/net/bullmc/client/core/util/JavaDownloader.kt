@@ -35,6 +35,7 @@ object JavaDownloader {
     private const val ADOPTIUM_API = "https://api.adoptium.net/v3/assets/latest/21/hotspot?architecture=x64&image_type=jdk&os=windows&vendor=eclipse"
 
     private val client = HttpClient(CIO) {
+        expectSuccess = true
         install(HttpTimeout) {
             requestTimeoutMillis = 300_000
             connectTimeoutMillis = 30_000
@@ -94,10 +95,11 @@ object JavaDownloader {
 
             tempFile.delete()
 
-            if (javaExe.exists()) {
-                println("[JRE] Java installed: ${javaExe.absolutePath}")
+            val installedJava = findJavaInDir(targetDir)
+            if (installedJava != null) {
+                println("[JRE] Java installed: ${installedJava}")
                 onProgress("Java 21 установлена!", 1.0f)
-                javaExe.absolutePath
+                installedJava
             } else {
                 println("[JRE] Java exe not found after extraction")
                 onProgress("Ошибка: Java не найдена после распаковки", 0f)
@@ -116,7 +118,7 @@ object JavaDownloader {
                 var entry = zis.nextEntry
                 while (entry != null) {
                     if (!entry.isDirectory) {
-                        val outFile = File(targetDir, entry.name)
+                        val outFile = safeDestination(targetDir, entry.name)
                         outFile.parentFile?.mkdirs()
                         outFile.outputStream().use { out ->
                             zis.copyTo(out)
@@ -130,12 +132,9 @@ object JavaDownloader {
     }
 
     fun findJavaInDir(jreDir: File): String? {
-        val candidates = listOf(
-            File(jreDir, "jdk-21.0.3/bin/java.exe"),
-            File(jreDir, "jdk-21/bin/java.exe"),
-            File(jreDir, "jdk-21.0.3/bin/java"),
-            File(jreDir, "jdk-21/bin/java")
-        )
-        return candidates.firstOrNull { it.exists() }?.absolutePath
+        if (!jreDir.isDirectory) return null
+        return jreDir.walkTopDown().maxDepth(4).firstOrNull {
+            it.isFile && it.parentFile?.name == "bin" && it.name in setOf("java.exe", "java")
+        }?.absolutePath
     }
 }

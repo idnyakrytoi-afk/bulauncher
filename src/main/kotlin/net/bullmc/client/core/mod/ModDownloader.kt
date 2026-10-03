@@ -11,6 +11,7 @@ object ModDownloader {
     private const val MOD_URL = "https://github.com/bullmc/bull-tweaks/releases/download/v1.0.0/bulltweaks-1.0.0.jar"
 
     private val client = HttpClient(CIO) {
+        expectSuccess = true
         install(HttpTimeout) {
             requestTimeoutMillis = 120_000
             connectTimeoutMillis = 15_000

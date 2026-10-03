@@ -18,9 +18,8 @@ object ModSettings {
 
     fun init(gameDirOverride: File? = null) {
         LauncherPaths.init()
-        if (gameDirOverride != null) {
-            gameDir = gameDirOverride
-        }
+        gameDir = gameDirOverride ?: LauncherPaths.game
+        current = BullTweaksConfig()
         if (configFile.exists()) {
             try {
                 current = json.decodeFromString<BullTweaksConfig>(configFile.readText())
