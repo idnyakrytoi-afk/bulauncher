@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import kotlin.test.*
 
 class ModpackImporterTest {
-    @Test fun `config paths stay relative to game directory`() = runBlocking {
+    @Test fun `config paths stay relative to game directory`(): Unit = runBlocking {
         val root = Files.createTempDirectory("mrpack").toFile()
         try {
             val config = root.resolve("config/settings.txt")
@@ -22,7 +22,7 @@ class ModpackImporterTest {
         } finally { root.deleteRecursively() }
     }
 
-    @Test fun `server only files are skipped`() = runBlocking {
+    @Test fun `server only files are skipped`(): Unit = runBlocking {
         val root = Files.createTempDirectory("mrpack").toFile()
         try {
             ModpackImporter.downloadModpackFiles(MrpackManifest(files = listOf(
@@ -32,7 +32,7 @@ class ModpackImporterTest {
         } finally { root.deleteRecursively() }
     }
 
-    @Test fun `manifest traversal is rejected before download`() = runBlocking {
+    @Test fun `manifest traversal is rejected before download`(): Unit = runBlocking {
         val root = Files.createTempDirectory("mrpack").toFile()
         try {
             assertFailsWith<IllegalArgumentException> {
