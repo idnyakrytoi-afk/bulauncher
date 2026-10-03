@@ -30,7 +30,8 @@ data class MrpackFile(
     val path: String = "",
     val hashes: MrpackHashes = MrpackHashes(),
     val downloads: List<String> = emptyList(),
-    val fileSize: Long = 0
+    val fileSize: Long = 0,
+    val env: Map<String, String> = emptyMap()
 )
 
 @Serializable
@@ -87,20 +88,21 @@ object ModpackImporter {
 
     suspend fun downloadModpackFiles(
         manifest: MrpackManifest,
-        modsDir: File,
+        gameDir: File,
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ) {
-        modsDir.mkdirs()
+        gameDir.mkdirs()
         val total = manifest.files.size
         if (total == 0) return
 
         for ((index, file) in manifest.files.withIndex()) {
+            if (file.env["client"] == "unsupported") continue
             val downloadUrl = file.downloads.firstOrNull()
                 ?: throw IllegalArgumentException("No download URL for ${file.path}")
-            val outFile = safeDestination(modsDir, file.path.removePrefix("mods/"))
+            val outFile = safeDestination(gameDir, file.path)
             outFile.parentFile?.mkdirs()
 
-            if (outFile.exists() && outFile.length() == file.fileSize) continue
+            if (outFile.exists() && outFile.length() == file.fileSize && verifyHash(outFile.readBytes(), file.hashes)) continue
 
             onProgress("Скачивание ${file.path.substringAfterLast('/')}", (index.toFloat() / total) * 0.9f)
 
@@ -108,6 +110,7 @@ object ModpackImporter {
                 val response = client.get(downloadUrl)
                 val bytes = response.readBytes()
                 require(bytes.size.toLong() == file.fileSize) { "Incorrect size for ${file.path}" }
+                require(verifyHash(bytes, file.hashes)) { "Incorrect hash for ${file.path}" }
                 outFile.writeBytes(bytes)
                 println("[MODPACK] Downloaded: ${file.path}")
             } catch (e: CancellationException) {
@@ -117,6 +120,17 @@ object ModpackImporter {
             }
         }
         onProgress("Готово", 1.0f)
+    }
+
+    private fun verifyHash(bytes: ByteArray, hashes: MrpackHashes): Boolean {
+        val (algorithm, expected) = when {
+            hashes.sha512.isNotBlank() -> "SHA-512" to hashes.sha512
+            hashes.sha1.isNotBlank() -> "SHA-1" to hashes.sha1
+            else -> return true
+        }
+        val actual = java.security.MessageDigest.getInstance(algorithm).digest(bytes)
+            .joinToString("") { "%02x".format(it) }
+        return actual.equals(expected, ignoreCase = true)
     }
 
     fun getLoaderFromDependencies(dependencies: Map<String, String>): Pair<LoaderType, String> {
@@ -146,9 +160,8 @@ object ModpackImporter {
         onProgress("Распаковка overrides...", 0.1f)
         extractOverrides(zipFile, gameDir)
 
-        val modsDir = File(gameDir, "mods")
         onProgress("Скачивание модов...", 0.2f)
-        downloadModpackFiles(manifest, modsDir, onProgress)
+        downloadModpackFiles(manifest, gameDir, onProgress)
 
         println("[MODPACK] Imported: ${manifest.name} (${manifest.versionId})")
         return manifest
